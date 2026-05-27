@@ -92,9 +92,40 @@ zenmetrics or in the renamed cubecl crates themselves.
      by our rename or patch — it's a pre-existing upstream bug in the
      `export_tests`-gated runtime-tests module, and `export_tests` is
      never enabled in published downstream consumption.
-- [ ] Stage 4 — publish 0.10.0 to crates.io (dep-order). Tag v0.10.0 + GH release.
-- [ ] Stage 5 — apply PTX cache + Metal atomic patches. Smoke build + test.
-- [ ] Stage 6 — publish 0.10.1. Tag + GH release.
-- [ ] Stage 7 — workspace switch in zenmetrics--phase8f (Cargo.toml package-alias only).
+- [/] Stage 4 — publish 0.10.0 to crates.io (dep-order). PROGRESS:
+   - PUBLISHED: zenforks-cubecl-runtime, -core, -opt, -std, -cpp, -cuda (6/11)
+   - REMAINING: zenforks-cubecl-hip, -spirv, -cpu, -wgpu, zenforks-cubecl (umbrella) (5/11)
+   - Running automated rate-limit-aware publish loop at
+     `/home/lilith/work/zenforks-cubecl-work-0.10.0/scripts/publish_remaining_v0100.sh`
+     (sibling worktree checked out at d45a3868 — pre-patches state — to
+     ensure 0.10.0 publishes are vanilla + pinned-upload-only and don't
+     accidentally include the 0.10.1 patches).
+   - Rate limit on new-crate publish: 5 burst + 1 per 10 min. Total
+     remaining publish window: ~50 min.
+   - Still need: git tag v0.10.0 + GH release once all 11 done.
+- [x] Stage 5 — apply PTX cache + Metal atomic patches.
+   - PTX cache patch: extended cubecl-cuda/build.rs to also emit
+     CUBECL_GIT_SHA env var; cubecl-cuda/src/compute/context.rs adds
+     cubecl_sha + sm_arch + driver_version path segments to the
+     CompilationCache key; adds cuda_runtime_version_string() helper
+     using cudarc::driver::sys::cuDriverGetVersion (cudarc 0.19 API).
+   - Metal atomic patch (Part A only — capability honesty):
+     cubecl-wgpu/src/backend/metal.rs splits the atomic types list so
+     f32 atomic only registers AtomicUsage::LoadStore, not Add.
+     Callers requesting Atomic<f32>::fetch_add fail at construct-time
+     instead of silently emitting `atomicAdd<f32>` that naga drops.
+   - Metal patch Part B (CAS-loop WGSL codegen for f32-atomic-add)
+     INTENTIONALLY OMITTED — deferred to follow-on. The downstream
+     workarounds in zenmetrics' butteraugli-gpu / dssim-gpu / cvvdp-gpu
+     remain the production fix; Part A makes them load-bearing instead
+     of papered-over.
+   - Workspace bumped to 0.10.1 for the 11 renamed crates (5 non-renamed
+     stay pinned at 0.10.0 via explicit `version = "0.10.0"`).
+   - cargo build --workspace --no-default-features --lib: green in 7s
+   - cargo test -p zenforks-cubecl-runtime --lib: 63/63
+- [ ] Stage 6 — publish 0.10.1. Tag + GH release. WAITING on Stage 4 completion.
+- [/] Stage 7 — workspace switch in zenmetrics--phase8f. Cargo.toml
+   modification staged (in jj working copy, not yet committed).
+   Awaits Stage 6 publish before commit + push.
 - [ ] Stage 8 — parity sweep verification.
 - [ ] Stage 9 — documentation: ZENFORKS_CUBECL_STRATEGY.md.
