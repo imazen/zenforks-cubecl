@@ -79,8 +79,19 @@ zenmetrics or in the renamed cubecl crates themselves.
 ## Stages
 
 - [x] Stage 1 — create imazen/zenforks-cubecl repo. Cloned upstream v0.10.0 to `/home/lilith/work/zenforks-cubecl-work`, set up remotes (upstream=tracel-ai, origin=imazen/zenforks-cubecl), branched `main` from v0.10.0.
-- [ ] Stage 2 — minimal-scope rename with [lib] name shim. Cargo workspace build green.
-- [ ] Stage 3 — apply pinned-upload patch. Smoke build + test green.
+- [x] Stage 2 — minimal-scope rename with [lib] name shim. `cargo check --workspace --no-default-features` green in 45s; `cargo build --workspace --no-default-features --lib` green in 18s. Commit `92c87709` on imazen/zenforks-cubecl main.
+- [x] Stage 3 — apply pinned-upload patch. Patch from de2f9857 (one-commit cherry on top of v0.10.0) applied clean via `git apply`. Smoke build green. Test results:
+   - `zenforks-cubecl-runtime` (the patched crate): 63/63 lib tests pass
+   - 7 other renamed crates with tests pass individually (-p ... --lib)
+   - `--workspace --lib` fails on cuda/wgpu/cpu/hip due to UPSTREAM v0.10.0 bug:
+     `cubecl-core/src/runtime_tests/binary.rs:56` uses
+     `FastMath::all().difference(FastMath::NotNaN)` which doesn't compile
+     against the resolved `enumset 1.1.13` (needs `.into()`). The same
+     failure reproduces on a stock upstream v0.10.0 checkout
+     (`~/.cargo/git/checkouts/cubecl-.../7cf20373`). This is **not** caused
+     by our rename or patch — it's a pre-existing upstream bug in the
+     `export_tests`-gated runtime-tests module, and `export_tests` is
+     never enabled in published downstream consumption.
 - [ ] Stage 4 — publish 0.10.0 to crates.io (dep-order). Tag v0.10.0 + GH release.
 - [ ] Stage 5 — apply PTX cache + Metal atomic patches. Smoke build + test.
 - [ ] Stage 6 — publish 0.10.1. Tag + GH release.
