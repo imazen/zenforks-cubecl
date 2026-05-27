@@ -38,8 +38,8 @@ name = "cubecl_spirv"
 [dependencies]
 bitflags = { workspace = true }
 cubecl-common = { path = "../cubecl-common", version = "0.10.0", default-features = false }
-cubecl-core = { package = "zenforks-cubecl-core", path = "../cubecl-core", version = "0.10.0" }
-cubecl-runtime = { package = "zenforks-cubecl-runtime", path = "../cubecl-runtime", version = "0.10.0", default-features = false, features = [
+cubecl-core = { package = "zenforks-cubecl-core", path = "../cubecl-core", version = "0.10.1" }
+cubecl-runtime = { package = "zenforks-cubecl-runtime", path = "../cubecl-runtime", version = "0.10.1", default-features = false, features = [
     "channel-mutex",
 ] }
 half = { workspace = true }
@@ -50,4 +50,4 @@ hashbrown = { workspace = true }
 rspirv = { workspace = true, features = ["serialize", "deserialize"] }
 
 # Optimizer
-cubecl-opt = { package = "zenforks-cubecl-opt", path = "../cubecl-opt", version = "0.10.0" }
+cubecl-opt = { package = "zenforks-cubecl-opt", path = "../cubecl-opt", version = "0.10.1" }

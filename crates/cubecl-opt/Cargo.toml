@@ -28,7 +28,7 @@ name = "cubecl_opt"
 
 [dependencies]
 cubecl-common = { path = "../cubecl-common", version = "0.10.0", default-features = false }
-cubecl-core = { package = "zenforks-cubecl-core", path = "../cubecl-core", version = "0.10.0", default-features = false }
+cubecl-core = { package = "zenforks-cubecl-core", path = "../cubecl-core", version = "0.10.1", default-features = false }
 cubecl-ir = { path = "../cubecl-ir", version = "0.10.0", default-features = false }
 
 float-ord = "0.3"

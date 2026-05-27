@@ -40,10 +40,10 @@ name = "cubecl_cpp"
 
 [dependencies]
 cubecl-common = { path = "../cubecl-common", version = "0.10.0", default-features = false }
-cubecl-core = { package = "zenforks-cubecl-core", path = "../cubecl-core", version = "0.10.0", default-features = false }
+cubecl-core = { package = "zenforks-cubecl-core", path = "../cubecl-core", version = "0.10.1", default-features = false }
 # For shared allocation
-cubecl-opt = { package = "zenforks-cubecl-opt", path = "../cubecl-opt", version = "0.10.0", default-features = false }
-cubecl-runtime = { package = "zenforks-cubecl-runtime", path = "../cubecl-runtime", version = "0.10.0", default-features = false, features = [
+cubecl-opt = { package = "zenforks-cubecl-opt", path = "../cubecl-opt", version = "0.10.1", default-features = false }
+cubecl-runtime = { package = "zenforks-cubecl-runtime", path = "../cubecl-runtime", version = "0.10.1", default-features = false, features = [
     "channel-mutex",
 ] }
 itertools = { version = "0.14.0", default-features = false }
