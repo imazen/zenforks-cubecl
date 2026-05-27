@@ -106,11 +106,13 @@ fn register_types(props: &mut DeviceProperties) {
         ElemType::Bool,
     ];
 
+    // f32 is intentionally NOT in this list — see comment below for why
+    // it ships separately with restricted usage. Integer atomics here
+    // all natively support both Add and LoadStore on Metal 3.
     let atomic_types = [
         ElemType::Int(IntKind::I32),
         ElemType::UInt(UIntKind::U32),
         ElemType::UInt(UIntKind::U64),
-        ElemType::Float(FloatKind::F32),
     ];
 
     for ty in types {
@@ -123,6 +125,36 @@ fn register_types(props: &mut DeviceProperties) {
             AtomicUsage::Add | AtomicUsage::LoadStore,
         )
     }
+
+    // f32 atomic is supported only with LoadStore on Metal. AtomicUsage::Add
+    // is intentionally omitted because naga's MSL backend doesn't emit
+    // `atomic_fetch_add_explicit` for f32 even when the underlying Metal 3
+    // device supports it: cubecl-wgpu's WGSL codegen would emit
+    // `atomicAdd<f32>(...)` which naga drops silently in the MSL output,
+    // causing every reduction to return its default value (~0.0) without
+    // a runtime error.
+    //
+    // Declaring AtomicUsage::Add here would make callers happily emit
+    // `Atomic<f32>::fetch_add` and ship silently-broken scores. By
+    // omitting Add, callers like the cubecl-runtime construct path catch
+    // the missing capability at construction time and surface
+    // `unsupported atomic operation on this backend` — loud and actionable.
+    //
+    // Downstream (zenmetrics) has matching per-metric audits that flip
+    // `fast-reduction` default to OFF on Metal-targeted builds for
+    // butteraugli-gpu / dssim-gpu, and a Metal-reject path in cvvdp-gpu.
+    // See zenmetrics' crates/zenmetrics-api/docs/CUBECL_METAL_ATOMIC_FIX.md
+    // for the full audit.
+    //
+    // A future improvement: emit a u32-bitcast CAS loop in the WGSL
+    // codegen for Atomic<f32>::fetch_add to get correctness on every
+    // backend, then opt into native atomic_fetch_add_explicit when
+    // naga grows MSL-backend support for it. That work is tracked
+    // separately.
+    props.register_atomic_type_usage(
+        Type::new(StorageType::Atomic(ElemType::Float(FloatKind::F32))),
+        AtomicUsage::LoadStore,
+    );
 }
 
 fn register_cmma(props: &mut DeviceProperties) {
