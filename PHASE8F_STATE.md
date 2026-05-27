@@ -92,17 +92,18 @@ zenmetrics or in the renamed cubecl crates themselves.
      by our rename or patch — it's a pre-existing upstream bug in the
      `export_tests`-gated runtime-tests module, and `export_tests` is
      never enabled in published downstream consumption.
-- [/] Stage 4 — publish 0.10.0 to crates.io (dep-order). PROGRESS:
-   - PUBLISHED: zenforks-cubecl-runtime, -core, -opt, -std, -cpp, -cuda (6/11)
-   - REMAINING: zenforks-cubecl-hip, -spirv, -cpu, -wgpu, zenforks-cubecl (umbrella) (5/11)
+- [/] Stage 4 — publish 0.10.0 to crates.io (dep-order). PROGRESS (updated 2026-05-27T23:27Z):
+   - PUBLISHED: zenforks-cubecl-runtime, -core, -opt, -std, -cpp, -cuda, -hip (7/11)
+   - REMAINING: zenforks-cubecl-spirv, -cpu, -wgpu, zenforks-cubecl (umbrella) (4/11)
    - Running automated rate-limit-aware publish loop at
      `/home/lilith/work/zenforks-cubecl-work-0.10.0/scripts/publish_remaining_v0100.sh`
      (sibling worktree checked out at d45a3868 — pre-patches state — to
      ensure 0.10.0 publishes are vanilla + pinned-upload-only and don't
      accidentally include the 0.10.1 patches).
    - Rate limit on new-crate publish: 5 burst + 1 per 10 min. Total
-     remaining publish window: ~50 min.
-   - Still need: git tag v0.10.0 + GH release once all 11 done.
+     remaining publish window: ~30 min for the last 4.
+   - After all 11 land, run `scripts/release_v0_10_0.sh` to tag
+     v0.10.0 at commit d45a3868 + create GH release.
 - [x] Stage 5 — apply PTX cache + Metal atomic patches.
    - PTX cache patch: extended cubecl-cuda/build.rs to also emit
      CUBECL_GIT_SHA env var; cubecl-cuda/src/compute/context.rs adds
