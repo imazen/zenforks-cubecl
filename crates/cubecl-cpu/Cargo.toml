@@ -5,7 +5,7 @@ description = "CPU runtime for CubeCL"
 edition.workspace = true
 keywords = ["cpu"]
 license.workspace = true
-name = "cubecl-cpu"
+name = "zenforks-cubecl-cpu"
 readme.workspace = true
 repository = "https://github.com/tracel-ai/cubecl/tree/main/crates/cubecl-cpu"
 version.workspace = true
@@ -34,22 +34,26 @@ tracing = [
 ]
 
 
+
+[lib]
+name = "cubecl_cpu"
+
 [dependencies]
 cubecl-common = { path = "../cubecl-common", version = "0.10.0", default-features = false, features = [
     "std",
 ] }
-cubecl-core = { path = "../cubecl-core", version = "0.10.0", default-features = false, features = [
+cubecl-core = { package = "zenforks-cubecl-core", path = "../cubecl-core", version = "0.10.0", default-features = false, features = [
     "std",
 ] }
-cubecl-opt = { path = "../cubecl-opt", version = "0.10.0", default-features = false, features = [
+cubecl-opt = { package = "zenforks-cubecl-opt", path = "../cubecl-opt", version = "0.10.0", default-features = false, features = [
     "std",
 ] }
-cubecl-runtime = { path = "../cubecl-runtime", version = "0.10.0", default-features = false, features = [
+cubecl-runtime = { package = "zenforks-cubecl-runtime", path = "../cubecl-runtime", version = "0.10.0", default-features = false, features = [
     "channel-mutex",
     "std",
     "storage-bytes",
 ] }
-cubecl-std = { path = "../cubecl-std", version = "0.10.0", default-features = false }
+cubecl-std = { package = "zenforks-cubecl-std", path = "../cubecl-std", version = "0.10.0", default-features = false }
 
 
 bytemuck = { workspace = true }
@@ -63,10 +67,10 @@ paste = { workspace = true }
 
 [dev-dependencies]
 test-log = { workspace = true, features = ["trace"] }
-cubecl-core = { path = "../cubecl-core", version = "0.10.0", features = [
+cubecl-core = { package = "zenforks-cubecl-core", path = "../cubecl-core", version = "0.10.0", features = [
     "export_tests",
 ] }
-cubecl-std = { path = "../cubecl-std", version = "0.10.0", features = [
+cubecl-std = { package = "zenforks-cubecl-std", path = "../cubecl-std", version = "0.10.0", features = [
     "export_tests",
 ] }
 paste = { workspace = true }

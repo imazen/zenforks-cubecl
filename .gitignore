@@ -28,3 +28,6 @@ Cargo.lock
 # Nix artifacts
 .envrc
 .direnv
+
+# Multi-agent coordination marker (per ~/.claude/CLAUDE.md)
+.workongoing

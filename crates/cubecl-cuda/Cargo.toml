@@ -5,7 +5,7 @@ description = "CUDA runtime for CubeCL"
 edition.workspace = true
 keywords = ["gpu", "cuda"]
 license.workspace = true
-name = "cubecl-cuda"
+name = "zenforks-cubecl-cuda"
 readme.workspace = true
 repository = "https://github.com/tracel-ai/cubecl/tree/main/crates/cubecl-cuda"
 version.workspace = true
@@ -33,6 +33,10 @@ tracing = [
 ]
 
 
+
+[lib]
+name = "cubecl_cuda"
+
 [dependencies]
 # Runtime Deps
 log = { workspace = true }
@@ -43,11 +47,11 @@ cubecl-common = { path = "../cubecl-common", version = "0.10.0", default-feature
     "compilation-cache",
     "hash",
 ] }
-cubecl-core = { path = "../cubecl-core", version = "0.10.0", default-features = false }
-cubecl-cpp = { path = "../cubecl-cpp", version = "0.10.0", default-features = false, features = [
+cubecl-core = { package = "zenforks-cubecl-core", path = "../cubecl-core", version = "0.10.0", default-features = false }
+cubecl-cpp = { package = "zenforks-cubecl-cpp", path = "../cubecl-cpp", version = "0.10.0", default-features = false, features = [
     "cuda",
 ] }
-cubecl-runtime = { path = "../cubecl-runtime", version = "0.10.0", default-features = false, features = [
+cubecl-runtime = { package = "zenforks-cubecl-runtime", path = "../cubecl-runtime", version = "0.10.0", default-features = false, features = [
     "channel-mutex",
     "std",
 ] }
@@ -59,10 +63,10 @@ serde = { workspace = true }
 
 
 [dev-dependencies]
-cubecl-core = { path = "../cubecl-core", version = "0.10.0", features = [
+cubecl-core = { package = "zenforks-cubecl-core", path = "../cubecl-core", version = "0.10.0", features = [
     "export_tests",
 ] }
-cubecl-std = { path = "../cubecl-std", version = "0.10.0", features = [
+cubecl-std = { package = "zenforks-cubecl-std", path = "../cubecl-std", version = "0.10.0", features = [
     "export_tests",
 ] }
 paste = { workspace = true }

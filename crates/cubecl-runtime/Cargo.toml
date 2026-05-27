@@ -5,7 +5,7 @@ description = "Crate that helps creating high performance async runtimes for Cub
 edition.workspace = true
 keywords = ["deep-learning", "machine-learning", "data"]
 license.workspace = true
-name = "cubecl-runtime"
+name = "zenforks-cubecl-runtime"
 readme.workspace = true
 repository = "https://github.com/tracel-ai/cubecl/tree/main/crates/cubecl-runtime"
 version.workspace = true
@@ -34,6 +34,10 @@ std = ["cubecl-common/std", "toml", "dirs", "thiserror/std"]
 storage-bytes = []
 
 tracing = ["dep:tracing", "cubecl-common/tracing", "cubecl-ir/tracing"]
+
+
+[lib]
+name = "cubecl_runtime"
 
 [dependencies]
 # Runtime Deps

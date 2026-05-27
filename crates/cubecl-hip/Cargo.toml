@@ -5,7 +5,7 @@ description = "AMD ROCm HIP runtime for CubeCL"
 edition.workspace = true
 keywords = ["gpu", "amd", "rocm", "hip"]
 license.workspace = true
-name = "cubecl-hip"
+name = "zenforks-cubecl-hip"
 readme.workspace = true
 repository = "https://github.com/tracel-ai/cubecl/tree/main/crates/cubecl-hip"
 version.workspace = true
@@ -35,6 +35,10 @@ tracing = [
 ]
 
 
+
+[lib]
+name = "cubecl_hip"
+
 [dependencies]
 # Runtime Deps
 log = { workspace = true }
@@ -45,12 +49,12 @@ cubecl-common = { path = "../cubecl-common", version = "0.10.0", features = [
     "std",
     "hash",
 ] }
-cubecl-core = { path = "../cubecl-core", version = "0.10.0", default-features = false }
-cubecl-cpp = { path = "../cubecl-cpp", version = "0.10.0", default-features = false, features = [
+cubecl-core = { package = "zenforks-cubecl-core", path = "../cubecl-core", version = "0.10.0", default-features = false }
+cubecl-cpp = { package = "zenforks-cubecl-cpp", path = "../cubecl-cpp", version = "0.10.0", default-features = false, features = [
     "hip",
 ] }
 cubecl-hip-sys = { version = "7.1.5280200" }
-cubecl-runtime = { path = "../cubecl-runtime", version = "0.10.0", default-features = false, features = [
+cubecl-runtime = { package = "zenforks-cubecl-runtime", path = "../cubecl-runtime", version = "0.10.0", default-features = false, features = [
     "channel-mutex",
 ] }
 
@@ -62,10 +66,10 @@ paste = { workspace = true }
 serde = { workspace = true }
 
 [dev-dependencies]
-cubecl-core = { path = "../cubecl-core", version = "0.10.0", features = [
+cubecl-core = { package = "zenforks-cubecl-core", path = "../cubecl-core", version = "0.10.0", features = [
     "export_tests",
 ] }
-cubecl-std = { path = "../cubecl-std", version = "0.10.0", features = [
+cubecl-std = { package = "zenforks-cubecl-std", path = "../cubecl-std", version = "0.10.0", features = [
     "export_tests",
 ] }
 pretty_assertions = { workspace = true }
