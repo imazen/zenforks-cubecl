@@ -7,7 +7,7 @@ keywords = ["gpu", "amd", "rocm", "hip"]
 license.workspace = true
 name = "zenforks-cubecl-hip"
 readme.workspace = true
-repository = "https://github.com/tracel-ai/cubecl/tree/main/crates/cubecl-hip"
+repository = "https://github.com/imazen/zenforks-cubecl/tree/main/crates/cubecl-hip"
 version.workspace = true
 
 

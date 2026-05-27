@@ -7,7 +7,7 @@ keywords = ["cpp", "gpu", "cuda", "hip", "metal"]
 license.workspace = true
 name = "zenforks-cubecl-cpp"
 readme.workspace = true
-repository = "https://github.com/tracel-ai/cubecl/tree/main/crates/cubecl-cpp"
+repository = "https://github.com/imazen/zenforks-cubecl/tree/main/crates/cubecl-cpp"
 version.workspace = true
 
 

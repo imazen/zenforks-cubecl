@@ -7,7 +7,7 @@ keywords = ["gpu", "compiler"]
 license.workspace = true
 name = "zenforks-cubecl-spirv"
 readme.workspace = true
-repository = "https://github.com/tracel-ai/cubecl/tree/main/crates/cubecl-spirv"
+repository = "https://github.com/imazen/zenforks-cubecl/tree/main/crates/cubecl-spirv"
 version.workspace = true
 
 

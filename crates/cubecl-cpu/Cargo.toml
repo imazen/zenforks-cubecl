@@ -7,7 +7,7 @@ keywords = ["cpu"]
 license.workspace = true
 name = "zenforks-cubecl-cpu"
 readme.workspace = true
-repository = "https://github.com/tracel-ai/cubecl/tree/main/crates/cubecl-cpu"
+repository = "https://github.com/imazen/zenforks-cubecl/tree/main/crates/cubecl-cpu"
 version.workspace = true
 
 
