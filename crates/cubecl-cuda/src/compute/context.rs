@@ -64,6 +64,28 @@ impl CudaContext {
         context: *mut CUctx_st,
         arch: CudaArchitecture,
     ) -> Self {
+        // Build a cache-path suffix that captures the dimensions a
+        // disk-persistent PTX cache MUST invalidate on:
+        //
+        // - cubecl crate-graph HEAD SHA: codegen lives in cubecl-cuda /
+        //   cubecl-core / per-compiler crates. Bumping our fork rev
+        //   without bumping cubecl-common's `Cargo.toml` version field
+        //   would otherwise leave stale PTX served to the new pipeline.
+        // - GPU compute capability (sm_<arch>): NVRTC compiles
+        //   architecture-specific PTX; serving sm_70 PTX to an sm_80
+        //   device is a correctness bug.
+        // - CUDA driver version: different driver versions JIT the PTX
+        //   differently, so the cache is per-driver to be safe. (The
+        //   driver also maintains its own PTX->SASS cache at
+        //   ~/.nv/ComputeCache/; this layer is upstream of that.)
+        //
+        // Each axis is appended as a path segment under cubecl-common's
+        // existing <name>/<version>/<path>.json.log layout.
+        let cubecl_sha = option_env!("CUBECL_GIT_SHA").unwrap_or("unknown");
+        let compute_cap = format!("sm_{arch}");
+        let cuda_runtime = cuda_runtime_version_string();
+        let cache_path = format!("{cubecl_sha}/{compute_cap}/{cuda_runtime}/ptx");
+
         Self {
             context,
             module_names: HashMap::new(),
@@ -73,7 +95,7 @@ impl CudaContext {
                 if let Some(cache) = &config.compilation.cache {
                     let root = cache.root();
                     Some(CompilationCache::new(
-                        "ptx",
+                        &cache_path,
                         CacheOption::default().name("cuda").root(root),
                     ))
                 } else {
@@ -340,5 +362,26 @@ impl CudaContext {
         } else {
             Ok(())
         }
+    }
+}
+
+/// Render the CUDA driver version as "MAJOR.MINOR.PATCH" for use as a
+/// cache-key path segment. Falls back to "unknown" when the driver
+/// query fails. The driver version is part of the PTX cache key because
+/// different driver versions JIT-compile the same PTX into different
+/// SASS, and a stale cache hit could mask compilation issues.
+fn cuda_runtime_version_string() -> String {
+    let mut version: std::os::raw::c_int = 0;
+    // SAFETY: cuDriverGetVersion is a thread-safe FFI call that only
+    // writes the version into the out-parameter. No invariants required.
+    let result = unsafe { cudarc::driver::sys::cuDriverGetVersion(&mut version) };
+    if result == cudarc::driver::sys::CUresult::CUDA_SUCCESS {
+        let v = version;
+        let major = v / 1000;
+        let minor = (v % 1000) / 10;
+        let patch = v % 10;
+        format!("{major}.{minor}.{patch}")
+    } else {
+        "unknown".to_string()
     }
 }
