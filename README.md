@@ -1,3 +1,13 @@
+# Imazen-maintained CubeCL fork
+
+> This is the source tree for the `zenforks-cubecl-*` family of crates
+> on [crates.io](https://crates.io/search?q=zenforks-cubecl). See
+> **[ZENFORKS_README.md](ZENFORKS_README.md)** for the fork-specific
+> story (what's renamed, why, how to consume). The full upstream CubeCL
+> README continues below — read that to learn the library itself.
+
+---
+
 <div align="center">
 <img src="./assets/logo.drawio.svg" width="400px"/>
 
