@@ -17,6 +17,8 @@ rust-version.workspace = true
 version = "0.10.0"
 
 
+publish = false  # never republished — consume from upstream crates.io
+
 [lints]
 workspace = true
 
