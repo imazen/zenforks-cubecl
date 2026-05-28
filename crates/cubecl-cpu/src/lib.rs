@@ -193,8 +193,11 @@ mod tests {
         let expected: Vec<u32> = (0..n_cubes)
             .flat_map(|c| std::iter::repeat(c).take(cube_dim_size as usize))
             .collect();
-        assert_eq!(actual, expected.as_slice(),
-            "multi-cube SharedMemory/sync_cube isolation bug: got {actual:?}, expected {expected:?}");
+        assert_eq!(
+            actual,
+            expected.as_slice(),
+            "multi-cube SharedMemory/sync_cube isolation bug: got {actual:?}, expected {expected:?}"
+        );
     }
 }
 

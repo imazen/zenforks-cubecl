@@ -29,7 +29,9 @@ use tracel_llvm::mlir_rs::{
     },
     ir::{
         Attribute, Block, BlockRef, Identifier, Location, Module, Operation, Region, RegionRef,
-        attribute::{DenseElementsAttribute, FlatSymbolRefAttribute, StringAttribute, TypeAttribute},
+        attribute::{
+            DenseElementsAttribute, FlatSymbolRefAttribute, StringAttribute, TypeAttribute,
+        },
         r#type::{IntegerType, MemRefType, RankedTensorType},
     },
 };
@@ -408,10 +410,8 @@ impl<'a> Visitor<'a> {
                                 // See sync_cube_multi_cube_writes_pos
                                 // regression test in `lib.rs`.
                                 {
-                                    let func_name = FlatSymbolRefAttribute::new(
-                                        context,
-                                        "sync_cube",
-                                    );
+                                    let func_name =
+                                        FlatSymbolRefAttribute::new(context, "sync_cube");
                                     current_block.append_operation(func::call(
                                         context,
                                         func_name,
