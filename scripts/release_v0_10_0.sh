@@ -5,8 +5,12 @@
 set -eu
 cd "$(dirname "$0")/.."
 
-VERSION=v0.10.0
+VERSION=zenforks-v0.10.0
 TAG_TARGET="d45a3868"  # The commit that all 0.10.0 crates were published from
+# Tag name uses `zenforks-` prefix because the upstream `v0.10.0` tag
+# from tracel-ai/cubecl is also present in this repo (we cloned upstream
+# including all tags). This keeps our fork-tag namespace distinct so
+# `git tag` shows both `v0.10.0` (upstream) and `zenforks-v0.10.0` (ours).
 
 # Verify all 11 crates exist on crates.io at 0.10.0
 EXPECTED=(

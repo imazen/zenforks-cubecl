@@ -5,8 +5,10 @@
 set -eu
 cd "$(dirname "$0")/.."
 
-VERSION=v0.10.1
+VERSION=zenforks-v0.10.1
 TAG_TARGET="main"  # The commit on main with all 0.10.1 patches + version bump
+# Tag name uses `zenforks-` prefix to keep our tags distinct from any
+# future upstream `v0.10.1` (if upstream ever ships one).
 
 EXPECTED=(
     zenforks-cubecl-runtime
