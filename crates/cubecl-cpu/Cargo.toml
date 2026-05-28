@@ -8,7 +8,13 @@ license.workspace = true
 name = "zenforks-cubecl-cpu"
 readme.workspace = true
 repository = "https://github.com/imazen/zenforks-cubecl/tree/main/crates/cubecl-cpu"
-version.workspace = true
+# 2026-05-28 (Phase 9zc): bumped to 0.10.2 ahead of workspace.version
+# to publish the multi-cube sync_cube/SharedMemory fix. Other
+# zenforks-cubecl-* crates stay at workspace.version = 0.10.1 since
+# this is a cubecl-cpu-only patch — downstream consumers using
+# zenforks-cubecl = "0.10.1" will pull cubecl-cpu 0.10.2 via cargo's
+# semver-compatible upgrade.
+version = "0.10.2"
 
 
 [lints]
