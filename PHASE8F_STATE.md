@@ -92,18 +92,40 @@ zenmetrics or in the renamed cubecl crates themselves.
      by our rename or patch — it's a pre-existing upstream bug in the
      `export_tests`-gated runtime-tests module, and `export_tests` is
      never enabled in published downstream consumption.
-- [/] Stage 4 — publish 0.10.0 to crates.io (dep-order). PROGRESS (updated 2026-05-27T23:27Z):
-   - PUBLISHED: zenforks-cubecl-runtime, -core, -opt, -std, -cpp, -cuda, -hip (7/11)
-   - REMAINING: zenforks-cubecl-spirv, -cpu, -wgpu, zenforks-cubecl (umbrella) (4/11)
-   - Running automated rate-limit-aware publish loop at
-     `/home/lilith/work/zenforks-cubecl-work-0.10.0/scripts/publish_remaining_v0100.sh`
-     (sibling worktree checked out at d45a3868 — pre-patches state — to
-     ensure 0.10.0 publishes are vanilla + pinned-upload-only and don't
-     accidentally include the 0.10.1 patches).
-   - Rate limit on new-crate publish: 5 burst + 1 per 10 min. Total
-     remaining publish window: ~30 min for the last 4.
-   - After all 11 land, run `scripts/release_v0_10_0.sh` to tag
-     v0.10.0 at commit d45a3868 + create GH release.
+- [x] Stage 4 — publish 0.10.0 to crates.io (dep-order). All 11
+   renamed crates published 2026-05-27T22:55Z..2026-05-28T00:03Z.
+   Tag `zenforks-v0.10.0` at commit `d45a3868` + GitHub release at
+   <https://github.com/imazen/zenforks-cubecl/releases/tag/zenforks-v0.10.0>.
+- [x] Stage 6 — publish 0.10.1. All 11 renamed crates re-published at
+   0.10.1 between 2026-05-28T00:05Z..2026-05-28T00:08Z. PublishUpdate
+   rate limit (30 burst, 1/min) allowed chained back-to-back publishes
+   in ~3 minutes total. Tag `zenforks-v0.10.1` at main + GitHub
+   release at <https://github.com/imazen/zenforks-cubecl/releases/tag/zenforks-v0.10.1>.
+- [x] Stage 7 — workspace switch in zenmetrics--phase8f. Cargo.toml's
+   `[workspace.dependencies]` switched from `git = "lilith/cubecl"`
+   rev pins to crates.io `{ package = "zenforks-cubecl-*", version =
+   "0.10.1" }` aliases (with the `[lib] name = "cubecl_*"` shim
+   on the published crates keeping source code paths unchanged).
+   `[patch.crates-io]` block for cubecl-* removed (no longer needed).
+   Committed at `0832b9047c53` on imazen/zenmetrics master.
+   `cargo check --workspace` (default features): green in 26s.
+- [x] Stage 8 — parity sweep verification. Ran
+   `scripts/orchestrator_parity_sweep.py` on `target/release/zen-metrics`
+   built with the new workspace pins (cargo build --release -p
+   zen-metrics-cli --features gpu,gpu-cuda). Result: **54/54 PASS-EXACT**
+   (0.0 diff across 6 metrics × 3 sizes × 3 qualities). Bit-identical
+   legacy vs orchestrator output across the full matrix. Results
+   committed at `89068c373e77`:
+   - `benchmarks/orchestrator_parity_2026-05-27_phase8f.csv`
+   - `benchmarks/orchestrator_parity_2026-05-27_phase8f.md`
+- [x] Stage 9 — documentation. Final state:
+   - `crates/zenmetrics-api/docs/ZENFORKS_CUBECL_STRATEGY.md` (new)
+   - `crates/zenmetrics-api/docs/CUBECL_FORK_STRATEGY.md` banner marked
+     RESOLVED via Phase 8f
+   - `crates/zenmetrics-orchestrator/README.md` "Dependency on
+     `lilith/cubecl` fork" section rewritten for crates.io packaging
+   - `CHANGELOG.md` Phase 8f entry under [Unreleased]
+   - Pushed to master at `083257589bd9`
 - [x] Stage 5 — apply PTX cache + Metal atomic patches.
    - PTX cache patch: extended cubecl-cuda/build.rs to also emit
      CUBECL_GIT_SHA env var; cubecl-cuda/src/compute/context.rs adds
