@@ -29,7 +29,7 @@ use tracel_llvm::mlir_rs::{
     },
     ir::{
         Attribute, Block, BlockRef, Identifier, Location, Module, Operation, Region, RegionRef,
-        attribute::{DenseElementsAttribute, StringAttribute, TypeAttribute},
+        attribute::{DenseElementsAttribute, FlatSymbolRefAttribute, StringAttribute, TypeAttribute},
         r#type::{IntegerType, MemRefType, RankedTensorType},
     },
 };
@@ -388,6 +388,38 @@ impl<'a> Visitor<'a> {
                                     opt,
                                 );
                                 visitor.visit_basic_block(basic_block_id, opt);
+
+                                // 2026-05-28 (zenforks fork): implicit
+                                // sync_cube at the end of each cube
+                                // iteration. Without this, units that
+                                // finish the kernel body for cube k
+                                // racing ahead to cube k+1 can overwrite
+                                // shared memory before slower units of
+                                // cube k have read it. The global
+                                // sync_cube barrier in compute_task.rs
+                                // counts arrivals once per cube_dim_size,
+                                // so each cube iteration boundary needs
+                                // a sync_cube to fence shared memory.
+                                // This was the root cause of multi-cube
+                                // SharedMemory divergence on
+                                // cvvdp-gpu's downscale_tiled_kernel —
+                                // 1.3 JOD drift on 73×91 odd-dim inputs
+                                // (vs <0.005 JOD at 32×32 single-cube).
+                                // See sync_cube_multi_cube_writes_pos
+                                // regression test in `lib.rs`.
+                                {
+                                    let func_name = FlatSymbolRefAttribute::new(
+                                        context,
+                                        "sync_cube",
+                                    );
+                                    current_block.append_operation(func::call(
+                                        context,
+                                        func_name,
+                                        &[],
+                                        &[],
+                                        location,
+                                    ));
+                                }
 
                                 current_block.append_operation(scf::r#yield(&[], location));
                                 region

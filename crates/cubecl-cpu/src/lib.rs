@@ -145,6 +145,57 @@ mod tests {
         let actual = u32::from_bytes(&bytes);
         assert_eq!(actual, &[28u32; 8]);
     }
+
+    // Regression test for the multi-cube + SharedMemory + sync_cube
+    // bug surfaced by cvvdp-gpu's downscale_tiled_kernel on cubecl-cpu.
+    // Each cube writes its CUBE_POS_X into shared memory at slot 0,
+    // sync_cubes, then every unit in the cube reads it back to its
+    // per-cube output slice. If multi-cube dispatch correctly
+    // isolates shared memory between cubes (each cube must see its
+    // own CUBE_POS_X), output[cube_x * cube_dim_size + unit] ==
+    // cube_x. If shared memory leaks across cubes (the bug), output
+    // would show whatever the last-running cube wrote.
+    #[cube(launch)]
+    fn sync_cube_multi_cube_writes_pos(out: &mut Array<u32>) {
+        let mut mem = SharedMemory::<u32>::new(1usize);
+        if UNIT_POS == 0 {
+            mem[0] = CUBE_POS_X;
+        }
+        sync_cube();
+        let idx = CUBE_POS_X * CUBE_DIM_X + UNIT_POS_X;
+        out[idx as usize] = mem[0];
+    }
+
+    #[test]
+    fn test_sync_cube_multi_cube_writes_pos_cpu() {
+        let client = TestRuntime::client(&Default::default());
+        // 3 cubes × 4 units = 12 outputs.
+        let n_cubes: u32 = 3;
+        let cube_dim_size: u32 = 4;
+        let n = (n_cubes * cube_dim_size) as usize;
+        let out = client.empty(n * core::mem::size_of::<u32>());
+
+        unsafe {
+            sync_cube_multi_cube_writes_pos::launch::<TestRuntime>(
+                &client,
+                CubeCount::Static(n_cubes, 1, 1),
+                CubeDim::new_1d(cube_dim_size),
+                ArrayArg::from_raw_parts(out.clone(), n),
+            )
+        }
+
+        let bytes = client.read_one_unchecked(out);
+        let actual = u32::from_bytes(&bytes);
+        // Each cube_x writes its own index into shared memory; all
+        // units in that cube should read it back. With the bug, the
+        // global barrier means units may read shared memory written
+        // by a different cube — output would have wrong values.
+        let expected: Vec<u32> = (0..n_cubes)
+            .flat_map(|c| std::iter::repeat(c).take(cube_dim_size as usize))
+            .collect();
+        assert_eq!(actual, expected.as_slice(),
+            "multi-cube SharedMemory/sync_cube isolation bug: got {actual:?}, expected {expected:?}");
+    }
 }
 
 pub mod compiler;
