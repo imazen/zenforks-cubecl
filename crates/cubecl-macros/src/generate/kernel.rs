@@ -416,6 +416,9 @@ impl Launch {
             if cfg_debug || self.args.debug_symbols.is_present() {
                 settings.extend(quote![.debug_symbols()]);
             }
+            if self.args.precise.is_present() {
+                settings.extend(quote![.no_fast_math()]);
+            }
             if let Some(cluster_dim) = &self.args.cluster_dim {
                 settings.extend(quote![.cluster_dim(#cluster_dim)]);
             }
@@ -502,6 +505,9 @@ impl Launch {
         let cfg_debug = cfg!(debug_symbols) && !self.args.no_debug_symbols.is_present();
         if cfg_debug || self.args.debug_symbols.is_present() {
             settings.extend(quote![.debug_symbols()]);
+        }
+        if self.args.precise.is_present() {
+            settings.extend(quote![.no_fast_math()]);
         }
         if let Some(cluster_dim) = &self.args.cluster_dim {
             settings.extend(quote![.cluster_dim(#cluster_dim)]);

@@ -64,6 +64,17 @@ pub fn register_wgsl_features(
     if props.supports_type(ElemType::UInt(UIntKind::U64)) {
         comp_options.supports_u64 = true;
     }
+    comp_options.supports_f64 = adapter.features().contains(wgpu::Features::SHADER_F64);
+    comp_options.allow_f64_downgrade = f64_downgrade_preauthorized();
+}
+
+/// Pre-authorization for the lossy f64->f32 downgrade on devices without
+/// `SHADER_F64`. Strict (false) unless `CUBECL_ALLOW_F64_DOWNGRADE` is set to a
+/// non-"0" value. See [`cubecl_core::WgpuCompilationOptions::allow_f64_downgrade`].
+pub(crate) fn f64_downgrade_preauthorized() -> bool {
+    std::env::var("CUBECL_ALLOW_F64_DOWNGRADE")
+        .map(|v| v != "0")
+        .unwrap_or(false)
 }
 
 pub fn register_types(props: &mut DeviceProperties, adapter: &wgpu::Adapter) {

@@ -104,6 +104,10 @@ pub struct ComputeShader {
     pub kernel_name: String,
     pub subgroup_instructions_used: bool,
     pub f16_used: bool,
+    /// Whether floating-point fast-math is allowed for this kernel. When false,
+    /// the wgpu backend disables Metal fast-math (`MTLCompileOptions`) for this
+    /// module only. Carried from `KernelOptions::fast_math`.
+    pub fast_math: bool,
 }
 
 impl ComputeShader {

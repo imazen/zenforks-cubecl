@@ -77,13 +77,18 @@ fn register_features(
     _adapter: &metal::Adapter,
     props: &mut DeviceProperties,
     _features: Features,
-    _comp_options: &mut WgpuCompilationOptions,
+    comp_options: &mut WgpuCompilationOptions,
 ) {
     register_types(props);
     register_cmma(props);
     props.features.alignment = true;
     props.features.plane.insert(Plane::Ops);
     props.features.plane.insert(Plane::Sync);
+    // Apple/Metal GPUs have no 64-bit float. By default a kernel using f64 now
+    // fails to compile with a clear error (strict); the lossy f64->f32 downgrade
+    // only happens when pre-authorized (CUBECL_ALLOW_F64_DOWNGRADE).
+    comp_options.supports_f64 = false;
+    comp_options.allow_f64_downgrade = super::wgsl::f64_downgrade_preauthorized();
 }
 
 fn register_types(props: &mut DeviceProperties) {

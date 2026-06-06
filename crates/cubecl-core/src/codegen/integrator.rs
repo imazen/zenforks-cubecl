@@ -68,6 +68,16 @@ impl KernelSettings {
         self
     }
 
+    /// Disable floating-point fast-math for this kernel (precision-critical). On
+    /// the wgpu/Metal backend this turns off `MTLCompileOptions` fast-math for
+    /// this kernel's module only — needed for df64 / error-free transforms and
+    /// tight CPU-parity accumulators, which Metal's default fast-math would
+    /// reassociate and corrupt.
+    pub fn no_fast_math(mut self) -> Self {
+        self.options.fast_math = false;
+        self
+    }
+
     /// Set cluster dim
     pub fn cluster_dim(mut self, cluster_dim: CubeDim) -> Self {
         self.options.cluster_dim = Some(cluster_dim);

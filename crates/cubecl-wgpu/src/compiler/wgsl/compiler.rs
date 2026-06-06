@@ -51,6 +51,9 @@ pub struct WgslCompiler {
     strategy: ExecutionMode,
     subgroup_instructions_used: bool,
     f16_used: bool,
+    /// Set when an `f64` was lowered to `f32` because the device lacks
+    /// `SHADER_F64` (see [`WgpuCompilationOptions::supports_f64`]).
+    f64_downgraded: bool,
 }
 
 impl core::fmt::Debug for WgslCompiler {
@@ -131,20 +134,49 @@ impl WgslCompiler {
             address_type,
         };
 
+        let buffers = value
+            .buffers
+            .into_iter()
+            .map(|mut it| {
+                // This is safe when combined with the unroll transform that adjusts all indices.
+                // Must not be used alone
+                if it.ty.vector_size() > MAX_VECTOR_SIZE {
+                    it.ty = it.ty.with_vector_size(MAX_VECTOR_SIZE);
+                }
+                self.compile_binding(it)
+            })
+            .collect();
+
+        // Strict by default: if any `f64` was lowered to `f32` for a device without
+        // SHADER_F64 (covers both the body and buffer element types compiled above),
+        // refuse to silently lose precision unless the downgrade was pre-authorized.
+        if self.f64_downgraded {
+            if self.compilation_options.allow_f64_downgrade {
+                log::warn!(
+                    "cubecl-wgpu: kernel `{}` uses f64 but this device has no SHADER_F64; \
+                     f64 was downgraded to f32 (reduced precision, pre-authorized). If a storage \
+                     buffer in this kernel is bound or read back as f64 on the host, switch it to \
+                     f32 to match the f32 layout the shader now uses.",
+                    self.kernel_name
+                );
+            } else {
+                return Err(CompilationError::Validation {
+                    reason: format!(
+                        "kernel `{}` uses f64 but this device has no SHADER_F64. Refusing to \
+                         silently downgrade to f32 (precision loss). Either pre-authorize the \
+                         downgrade (env CUBECL_ALLOW_F64_DOWNGRADE=1, or \
+                         WgpuCompilationOptions.allow_f64_downgrade) if f32 is acceptable, or \
+                         change the kernel to f32 / a software-double (df64) type.",
+                        self.kernel_name
+                    ),
+                    backtrace: BackTrace::capture(),
+                });
+            }
+        }
+
         Ok(wgsl::ComputeShader {
             address_type,
-            buffers: value
-                .buffers
-                .into_iter()
-                .map(|mut it| {
-                    // This is safe when combined with the unroll transform that adjusts all indices.
-                    // Must not be used alone
-                    if it.ty.vector_size() > MAX_VECTOR_SIZE {
-                        it.ty = it.ty.with_vector_size(MAX_VECTOR_SIZE);
-                    }
-                    self.compile_binding(it)
-                })
-                .collect(),
+            buffers,
             scalars: value
                 .scalars
                 .into_iter()
@@ -175,6 +207,7 @@ impl WgslCompiler {
             workgroup_size_no_axis: self.workgroup_size_no_axis,
             subgroup_instructions_used: self.subgroup_instructions_used,
             f16_used: self.f16_used,
+            fast_math: value.options.fast_math,
             kernel_name: value.options.kernel_name,
         })
     }
@@ -241,7 +274,21 @@ impl WgslCompiler {
                 cube::FloatKind::TF32 => panic!("tf32 is not a valid WgpuElement"),
                 cube::FloatKind::Flex32 => wgsl::Elem::F32,
                 cube::FloatKind::F32 => wgsl::Elem::F32,
-                cube::FloatKind::F64 => wgsl::Elem::F64,
+                // Metal/Apple GPUs have no `f64`; the adapter advertises no
+                // SHADER_F64. Emitting `f64` WGSL there makes wgpu reject the
+                // module at create_shader_module and the kernel then silently
+                // no-ops (uninitialized output). Downgrade to `f32` instead so
+                // the kernel runs. Precision is reduced and host code that binds
+                // the buffer as `f64` must match (use `f32`); both are flagged by
+                // the one-shot warning emitted in `compile_shader`.
+                cube::FloatKind::F64 => {
+                    if self.compilation_options.supports_f64 {
+                        wgsl::Elem::F64
+                    } else {
+                        self.f64_downgraded = true;
+                        wgsl::Elem::F32
+                    }
+                }
             },
             cube::ElemType::Int(i) => match i {
                 cube::IntKind::I32 => wgsl::Elem::I32,

@@ -45,7 +45,7 @@ pub struct KernelDefinition {
     pub options: KernelOptions,
 }
 
-#[derive(Default, Clone, Debug, Hash, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 /// Options for a specific kernel compilation
 pub struct KernelOptions {
     /// The name of the kernel
@@ -54,6 +54,23 @@ pub struct KernelOptions {
     pub debug_symbols: bool,
     /// CUDA Cluster dim, if any
     pub cluster_dim: Option<CubeDim>,
+    /// Whether floating-point fast-math is allowed for this kernel. Default `true`.
+    /// Set `false` for precision-critical kernels (e.g. df64 / error-free transforms,
+    /// or tight CPU-parity accumulators): the wgpu backend then disables Metal
+    /// fast-math (`MTLCompileOptions`) for this kernel's module only, leaving every
+    /// other kernel at full speed. Inert on backends without a fast-math knob.
+    pub fast_math: bool,
+}
+
+impl Default for KernelOptions {
+    fn default() -> Self {
+        Self {
+            kernel_name: String::new(),
+            debug_symbols: false,
+            cluster_dim: None,
+            fast_math: true,
+        }
+    }
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Serialize, Deserialize)]

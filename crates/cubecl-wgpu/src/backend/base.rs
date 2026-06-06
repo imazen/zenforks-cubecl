@@ -90,6 +90,14 @@ impl WgpuServer {
                 ))
             },
             _ => {
+                // Per-kernel fast-math: precision-critical kernels (df64 /
+                // error-free transforms) set fast_math=false so the wgpu/Metal
+                // backend disables MTLCompileOptions fast-math for this module
+                // only, leaving other kernels at full speed.
+                let fast_math = match repr {
+                    Some(AutoRepresentationRef::Wgsl(s)) => s.fast_math,
+                    _ => true,
+                };
                 let checks = wgpu::ShaderRuntimeChecks {
                     // Cube does not need wgpu bounds checks - OOB behaviour is instead
                     // checked by cube (if enabled).
@@ -97,6 +105,7 @@ impl WgpuServer {
                     bounds_checks: false,
                     // Loop bounds are only checked in checked mode.
                     force_loop_bounding: mode == ExecutionMode::Checked,
+                    fast_math,
                     ..wgpu::ShaderRuntimeChecks::unchecked()
                 };
 

@@ -28,6 +28,11 @@ pub(crate) struct KernelArgs {
     // Force override because macro hygiene can cause weird issues
     pub no_debug_symbols: Flag,
     pub fast_math: Option<Expr>,
+    /// Mark the whole kernel precision-critical: disable floating-point fast-math
+    /// for this kernel's module on backends that have a per-module knob (Metal's
+    /// `MTLCompileOptions`). Needed for df64 / error-free transforms and tight
+    /// CPU-parity accumulators, which Metal's default fast-math reassociates away.
+    pub precise: Flag,
     pub debug: Flag,
     pub create_dummy_kernel: Flag,
     /// Generate expansion only, for expanding existing types
