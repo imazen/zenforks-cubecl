@@ -198,6 +198,8 @@ fn register_features(
 
     comp_options.supports_vulkan = true;
     comp_options.supports_u64 = extended_feat.core.shader_int64 == TRUE;
+    comp_options.supports_f64 = extended_feat.core.shader_float64 == TRUE;
+    comp_options.allow_f64_downgrade = super::wgsl::f64_downgrade_preauthorized();
     comp_options.vulkan.max_spirv_version = extended_feat.max_spirv_version;
 
     props.features.plane.insert(Plane::Sync);
