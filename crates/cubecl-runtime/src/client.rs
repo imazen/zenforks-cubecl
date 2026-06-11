@@ -322,7 +322,7 @@ impl<R: Runtime> ComputeClient<R> {
     /// [`Self::create_tensors`] to upload them to the device.
     ///
     /// On CUDA, pinned host memory enables direct DMA in `cuMemcpyHtoDAsync`,
-    /// reaching ~12-25 GB/s on PCIe 4.0 compared to ~5-6 GB/s from pageable
+    /// reaching ~12-25 GB/s on `PCIe 4.0` compared to ~5-6 GB/s from pageable
     /// memory. On backends without an explicit pinned-memory concept this falls
     /// back to a regular host allocation, so callers can use this API
     /// unconditionally without regressing other backends.

@@ -29,15 +29,15 @@ pub fn launch<R: Runtime>(device: &R::Device) {
             let h = client.create_from_slice_pinned(&buf);
             drop(h);
         }
-        let _ = client.sync();
+        cubecl::future::block_on(client.sync()).expect("device sync failed");
 
         // Benchmark create_from_slice (current default path).
         let mut total_pageable_ns: u128 = 0;
         for _ in 0..ITERS {
-            let _ = client.sync();
+            cubecl::future::block_on(client.sync()).expect("device sync failed");
             let t0 = std::time::Instant::now();
             let h = client.create_from_slice(&buf);
-            let _ = client.sync();
+            cubecl::future::block_on(client.sync()).expect("device sync failed");
             total_pageable_ns += t0.elapsed().as_nanos();
             drop(h);
         }
@@ -47,10 +47,10 @@ pub fn launch<R: Runtime>(device: &R::Device) {
         // Benchmark create_from_slice_pinned (new fast path).
         let mut total_pinned_ns: u128 = 0;
         for _ in 0..ITERS {
-            let _ = client.sync();
+            cubecl::future::block_on(client.sync()).expect("device sync failed");
             let t0 = std::time::Instant::now();
             let h = client.create_from_slice_pinned(&buf);
-            let _ = client.sync();
+            cubecl::future::block_on(client.sync()).expect("device sync failed");
             total_pinned_ns += t0.elapsed().as_nanos();
             drop(h);
         }

@@ -191,7 +191,7 @@ mod tests {
         // global barrier means units may read shared memory written
         // by a different cube — output would have wrong values.
         let expected: Vec<u32> = (0..n_cubes)
-            .flat_map(|c| std::iter::repeat(c).take(cube_dim_size as usize))
+            .flat_map(|c| std::iter::repeat_n(c, cube_dim_size as usize))
             .collect();
         assert_eq!(
             actual,
