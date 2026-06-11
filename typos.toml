@@ -1,8 +1,14 @@
 [default]
 extend-ignore-identifiers-re = ["CU_DEVICE_ATTRIBUTE_*", "HSA_*"]
 
+[default.extend-words]
+# JOD = Just-Objectionable-Difference, the ColorVideoVDP (cvvdp) metric unit
+JOD = "JOD"
+
 [default.extend-identifiers]
 Olt = "Olt"
+# CUDA memcpy struct locals in cubecl-cuda
+cpy = "cpy"
 UE4M3 = "UE4M3"
 UE8M0 = "UE8M0"
 arange = "arange"
