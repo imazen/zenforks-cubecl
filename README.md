@@ -17,7 +17,7 @@
 [![Discord](https://img.shields.io/discord/1038839012602941528.svg?color=7289da&&logo=discord)](https://discord.gg/KSBSPhAUCc)
 [![Current Crates.io Version](https://img.shields.io/crates/v/cubecl.svg)](https://crates.io/crates/cubecl)
 [![Minimum Supported Rust Version](https://img.shields.io/crates/msrv/cubecl)](https://crates.io/crates/burn)
-[![Test Status](https://github.com/tracel-ai/cubecl/actions/workflows/ci.yml/badge.svg)](https://github.com/tracel-ai/cubecl/actions/workflows/test.yml)
+[![Test Status](https://github.com/imazen/zenforks-cubecl/actions/workflows/ci.yml/badge.svg)](https://github.com/imazen/zenforks-cubecl/actions/workflows/ci.yml)
 ![license](https://shields.io/badge/license-MIT%2FApache--2.0-blue)
 <br />
 [![NVIDIA](https://img.shields.io/badge/nvidia-cuda-82b432)](https://github.com/tracel-ai/cubecl/tree/main/crates/cubecl-cuda)
