@@ -103,6 +103,8 @@ jobs:
         run: xtask doc tests
 
   linux-std-tests:
+    # tracel's self-provisioned GCP runners — absent on forks
+    if: github.repository == 'tracel-ai/cubecl'
     runs-on: [
       '@id:cubecl-linux-std-tests-${{ matrix.rust }}-${{ github.run_id }}-${{ github.run_attempt }}',
       '@image-family:ubuntu-2404-lts-amd64',
@@ -143,6 +145,8 @@ jobs:
         run: xtask test --ci
 
   linux-miri-tests:
+    # tracel's self-provisioned GCP runners — absent on forks
+    if: github.repository == 'tracel-ai/cubecl'
     runs-on: [
       '@id:cubecl-linux-miri-tests-${{ matrix.rust }}-${{ github.run_id }}-${{ github.run_attempt }}',
       '@image-family:ubuntu-2404-lts-amd64',
