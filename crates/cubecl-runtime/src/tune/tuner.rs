@@ -104,7 +104,6 @@ struct TuneRequest<K: AutotuneKey> {
     pending: Vec<PendingBench>,
 }
 
-#[allow(clippy::new_without_default)]
 impl<K: AutotuneKey> Tuner<K> {
     /// Create a tuner. Its cache is seeded from the persistent on-disk cache when
     /// `std_io` is enabled.

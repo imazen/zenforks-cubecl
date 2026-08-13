@@ -10,8 +10,6 @@
 //! You can still have multiple element types in a single kernel, since [`DynamicScalar`] uses const
 //! generics to differentiate between float kinds.
 
-#![allow(clippy::multiple_bound_locations)]
-
 use core::{cmp::Ordering, ops::*};
 use core::{f32, marker::PhantomData};
 

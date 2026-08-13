@@ -82,7 +82,6 @@ impl<M: DialectWmmaCompiler<Self>> DialectIncludes<Self> for HipDialect<M> {
                 extensions.push(extension);
             }
         };
-        #[allow(clippy::single_match)]
         match instruction {
             shared::Instruction::<Self>::Max(op) => {
                 register_extension(Extension::Max(*op.lhs.item().elem()));
@@ -104,7 +103,6 @@ impl<M: DialectWmmaCompiler<Self>> DialectIncludes<Self> for HipDialect<M> {
             }
         };
 
-        #[allow(clippy::single_match)]
         match instruction {
             shared::WarpInstruction::<Self>::ReduceMax { input, .. } => {
                 let input_item = input.item();

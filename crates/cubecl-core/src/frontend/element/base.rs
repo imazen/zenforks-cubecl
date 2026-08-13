@@ -119,7 +119,6 @@ pub trait IntoRuntime: CubeType + Sized {
 
 /// Trait for marking a function return value as comptime when the compiler can't infer it.
 pub trait IntoComptime: Sized {
-    #[allow(clippy::wrong_self_convention)]
     fn comptime(self) -> Self {
         self
     }

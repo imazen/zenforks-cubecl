@@ -47,7 +47,6 @@ pub trait AsViewMut<E: CubePrimitive>: AsView<E> {
 }
 
 pub trait AsViewMutExpand<E: CubePrimitive>: AsViewExpand<E> {
-    #[allow(clippy::too_many_arguments)]
     fn __expand_view_mut_method<C: Coordinates + 'static>(
         self,
         scope: &mut Scope,
@@ -177,7 +176,6 @@ macro_rules! as_view_tensor_map {
 
             pub trait AsTensorViewMutExpand<E: CubePrimitive>: AsTensorViewExpand<E> {
                 $(
-                    #[allow(clippy::too_many_arguments)]
                     fn [<__expand_view_mut_ $dim _method>]<C: Coordinates + 'static>(
                         self,
                         scope: &mut Scope,

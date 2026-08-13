@@ -59,7 +59,6 @@ impl<R: Runtime> Default for BStructLaunch<R> {
 
 // We just check that it compiles for the syntax.
 #[allow(unused_variables)]
-#[allow(clippy::needless_match)]
 #[cube(launch)]
 pub fn kernel_comptime_values(#[comptime] test: TestEnum<i32>) {
     let test2 = comptime! {
@@ -76,7 +75,6 @@ pub fn kernel_comptime_values(#[comptime] test: TestEnum<i32>) {
 
 // We just check that it compiles for the syntax.
 #[allow(unused_variables)]
-#[allow(clippy::needless_match)]
 #[cube(launch)]
 pub fn kernel_runtime_values(test: TestEnum<i32>) {
     let test2: TestEnum<i32> = match test {

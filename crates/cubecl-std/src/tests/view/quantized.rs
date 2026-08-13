@@ -48,7 +48,6 @@ pub fn kernel_quantized_view<F: Float, N: Size>(
     }
 }
 
-#[allow(clippy::needless_range_loop)]
 pub fn test_quantized_per_tensor_int<R: Runtime, F: Float + CubeElement>(
     client: ComputeClient<R>,
     vector_size_values: VectorSize,
@@ -109,7 +108,6 @@ pub fn test_quantized_per_tensor_int<R: Runtime, F: Float + CubeElement>(
     assert_eq!(&actual_float, &float_data);
 }
 
-#[allow(clippy::needless_range_loop)]
 pub fn test_quantized_per_tensor_fp4<R: Runtime, F: Float + CubeElement>(
     client: ComputeClient<R>,
     vector_size_values: VectorSize,

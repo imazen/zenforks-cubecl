@@ -874,7 +874,6 @@ pub struct TensorMapMeta {
 /// Specifieds the number of cubes to be dispatched for a kernel.
 ///
 /// This translates to eg. a grid for CUDA, or to `num_workgroups` for wgsl.
-#[allow(clippy::large_enum_variant)]
 pub enum CubeCount {
     /// Dispatch a known count of x, y, z cubes.
     Static(u32, u32, u32),

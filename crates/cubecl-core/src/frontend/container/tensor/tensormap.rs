@@ -343,7 +343,6 @@ mod metadata {
         ///
         /// The buffer length will be affected by the vectorization factor. To obtain the number of
         /// elements, you should multiply the length by the vectorization factor.
-        #[allow(clippy::len_without_is_empty)]
         pub fn buffer_len(&self) -> usize {
             unexpanded!()
         }

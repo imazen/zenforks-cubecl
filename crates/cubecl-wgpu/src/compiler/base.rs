@@ -15,7 +15,6 @@ use crate::{WgpuServer, WgslCompiler};
 
 use super::wgsl;
 
-#[allow(clippy::large_enum_variant)]
 #[derive(Debug, Clone)]
 pub enum AutoCompiler {
     Wgsl(WgslCompiler),
@@ -26,7 +25,6 @@ pub enum AutoCompiler {
 }
 
 #[derive(From)]
-#[allow(clippy::large_enum_variant)]
 pub enum AutoRepresentation {
     Wgsl(wgsl::ComputeShader),
     #[cfg(feature = "spirv")]
@@ -36,7 +34,6 @@ pub enum AutoRepresentation {
 }
 
 #[derive(From, Clone, Copy)]
-#[allow(clippy::large_enum_variant)]
 pub enum AutoRepresentationRef<'a> {
     Wgsl(&'a wgsl::ComputeShader),
     #[cfg(feature = "spirv")]

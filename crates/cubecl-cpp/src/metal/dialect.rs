@@ -169,7 +169,6 @@ using namespace metal;
                 extensions.push(extension);
             }
         };
-        #[allow(clippy::single_match)]
         match instruction {
             shared::Instruction::<Self>::Erf(instruction) => {
                 register_extension(Extension::Erf(

@@ -317,7 +317,6 @@ pub struct KernelFn {
     pub analysis: GenericAnalysis,
 }
 
-#[allow(clippy::large_enum_variant)]
 #[derive(Clone)]
 pub enum KernelBody {
     Block(Block),

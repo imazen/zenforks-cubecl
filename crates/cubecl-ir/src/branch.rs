@@ -7,7 +7,6 @@ use super::{OperationCode, Scope, Variable};
 use crate::TypeHash;
 
 /// All branching types.
-#[allow(clippy::large_enum_variant)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Clone, TypeHash, PartialEq, Eq, Hash, OperationCode)]
 #[operation(opcode_name = BranchOpCode)]

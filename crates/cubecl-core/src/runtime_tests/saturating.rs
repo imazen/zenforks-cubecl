@@ -26,7 +26,6 @@ pub fn kernel_saturating_sub<I: Int, N: Size>(
     }
 }
 
-#[allow(clippy::needless_range_loop)]
 pub fn test_saturating_add_unsigned<R: Runtime, I: Int + CubeElement>(
     client: ComputeClient<R>,
     vector_size: VectorSize,
@@ -72,7 +71,6 @@ pub fn test_saturating_add_unsigned<R: Runtime, I: Int + CubeElement>(
     assert_eq!(actual, out);
 }
 
-#[allow(clippy::needless_range_loop)]
 pub fn test_saturating_sub_unsigned<R: Runtime, I: Int + CubeElement>(
     client: ComputeClient<R>,
     vector_size: VectorSize,
@@ -114,7 +112,6 @@ pub fn test_saturating_sub_unsigned<R: Runtime, I: Int + CubeElement>(
 }
 
 // Signed has a lot more possible cases due to overflow/underflow
-#[allow(clippy::needless_range_loop)]
 pub fn test_saturating_add_signed<R: Runtime, I: Int + CubeElement>(
     client: ComputeClient<R>,
     vector_size: VectorSize,
@@ -196,7 +193,6 @@ pub fn test_saturating_add_signed<R: Runtime, I: Int + CubeElement>(
 }
 
 // Signed has a lot more possible cases due to overflow/underflow
-#[allow(clippy::needless_range_loop)]
 pub fn test_saturating_sub_signed<R: Runtime, I: Int + CubeElement>(
     client: ComputeClient<R>,
     vector_size: VectorSize,

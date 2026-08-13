@@ -440,7 +440,6 @@ mod impls {
             .finish(scope)
         }
 
-        #[allow(clippy::missing_safety_doc)]
         pub unsafe fn __expand_unwrap_unchecked_method(self, scope: &mut Scope) -> T::ExpandType
         where
             T::ExpandType: Assign,

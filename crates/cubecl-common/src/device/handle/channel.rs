@@ -207,7 +207,6 @@ std::thread_local! {
     static SERVER_THREAD: RefCell<Option<RunnerId>> = const { RefCell::new(None) };
 
     /// Heterogeneous map of service states owned by this thread.
-    #[allow(clippy::type_complexity)]
     static STATES: RefCell<HashMap<TypeId, RefCell<Box<dyn Any + 'static>>>> = RefCell::new(HashMap::new());
 }
 

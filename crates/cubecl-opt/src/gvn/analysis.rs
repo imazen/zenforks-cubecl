@@ -197,7 +197,6 @@ impl GvnState {
         // numbered, we can safely treat loops as being executed at least once. The worst case is
         // some expressions are executed unnecessarily, but for a loop that never runs, performance
         // is likely secondary.
-        #[allow(clippy::comparison_chain)]
         if let ControlFlow::Loop { body, .. } | ControlFlow::LoopBreak { body, .. } =
             opt.block(current).control_flow.borrow().clone()
         {

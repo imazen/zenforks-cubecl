@@ -95,7 +95,6 @@ pub struct Flags<D: Dialect> {
     pub address_type: Item<D>,
 }
 
-#[allow(clippy::too_many_arguments)]
 #[derive(Clone, Debug)]
 pub struct CppCompiler<D: Dialect> {
     kernel_name: String,
