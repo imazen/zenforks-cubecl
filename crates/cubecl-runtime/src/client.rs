@@ -100,9 +100,34 @@ impl<R: Runtime> ComputeClient<R> {
 
     fn do_read(&self, descriptors: Vec<CopyDescriptor>) -> DynFut<Result<Vec<Bytes>, ServerError>> {
         let stream_id = self.stream_id();
-        self.device
+        let num_descriptors = descriptors.len();
+        match self
+            .device
             .submit_blocking(move |server| server.read(descriptors, stream_id))
-            .unwrap()
+        {
+            Ok(fut) => fut,
+            // The server is unreachable — typically its thread died after an
+            // earlier failure (e.g. an allocation error) poisoned it. This fn
+            // already returns `Result`, so report it; the previous `.unwrap()`
+            // turned a recoverable device failure into an unwind on whichever
+            // thread happened to be reading, and every subsequent read panicked
+            // the same way instead of surfacing one actionable error.
+            //
+            // Readback is where a dead server is most dangerous: a consumer that
+            // reads an unwritten buffer gets zeros, which for a reduction is a
+            // plausible-looking but wrong answer rather than a failure.
+            // See imazen/zenforks-cubecl#4 and imazen/zenmetrics#41.
+            Err(err) => alloc::boxed::Box::pin(async move {
+                Err(ServerError::Generic {
+                    reason: format!(
+                        "compute server unavailable while reading back \
+                         {} buffer(s): {err:?}",
+                        num_descriptors
+                    ),
+                    backtrace: BackTrace::capture(),
+                })
+            }),
+        }
     }
 
     /// Given bindings, returns owned resources as bytes.
