@@ -10,7 +10,7 @@ use super::storage::gpu::GpuResource;
 use crate::{CudaCompiler, compute::stream::Stream};
 use crate::{
     CudaComputeKernel,
-    install::{cccl_include_path, include_path},
+    install::{try_cccl_include_path, try_include_path},
 };
 use cubecl_core::{
     compilation_cache::CompilationCache,
@@ -172,10 +172,23 @@ impl CudaContext {
             format!("--gpu-architecture=sm_{}", self.arch)
         };
 
-        let include_path = include_path();
-        let include_option = format!("--include-path={}", include_path.to_str().unwrap());
-        let cccl_include_path = cccl_include_path();
-        let cccl_include_option = format!("--include-path={}", cccl_include_path.to_str().unwrap());
+        // Propagate a missing/incomplete CUDA toolkit as a compilation error.
+        // These used to panic (imazen/zenforks-cubecl#4): this runs on the
+        // server thread, so the unwind was invisible to the caller, which then
+        // received a garbage result instead of an error. `to_str().unwrap()`
+        // was a second panic on any non-UTF-8 path; `to_string_lossy` cannot
+        // fail and the value is only used to build an --include-path flag.
+        let compile_err = |reason: String| -> LaunchError {
+            CompilationError::Generic {
+                reason,
+                backtrace: BackTrace::capture(),
+            }
+            .into()
+        };
+        let include_path = try_include_path().map_err(&compile_err)?;
+        let include_option = format!("--include-path={}", include_path.to_string_lossy());
+        let cccl_include_path = try_cccl_include_path().map_err(&compile_err)?;
+        let cccl_include_option = format!("--include-path={}", cccl_include_path.to_string_lossy());
         let mut options = vec![arch.as_str(), include_option.as_str(), "-lineinfo"];
         if cccl_include_path.exists() {
             options.push(&cccl_include_option);
