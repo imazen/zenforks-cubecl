@@ -62,7 +62,7 @@ impl Debug for CpuKernel {
 
 impl Debug for KernelRunner {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:?}", &self.workers)
+        write!(f, "{:?}", self.workers)
     }
 }
 

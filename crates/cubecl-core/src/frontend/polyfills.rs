@@ -29,7 +29,7 @@ pub mod set_polyfill {
 #[cube]
 pub fn erf<F: Float, N: Size>(x: Vector<F, N>) -> Vector<F, N> {
     let erf = erf_positive(x.abs());
-    select_many(x.less_than(Vector::new(F::new(0.0))), -erf, erf)
+    select_many(x.less_than(Vector::new(F::new(0.0f32))), -erf, erf)
 }
 
 /// An approximation of the error function: <https://en.wikipedia.org/wiki/Error_function#Numerical_approximations>
@@ -38,13 +38,13 @@ pub fn erf<F: Float, N: Size>(x: Vector<F, N>) -> Vector<F, N> {
 /// > All of these approximations are valid for x ≥ 0. To use these approximations for negative x, use the fact that erf x is an odd function, so erf x = −erf(−x).
 #[cube]
 fn erf_positive<F: Float, N: Size>(x: Vector<F, N>) -> Vector<F, N> {
-    let p = Vector::new(F::new(0.3275911));
-    let a1 = Vector::new(F::new(0.2548296));
-    let a2 = Vector::new(F::new(-0.28449674));
-    let a3 = Vector::new(F::new(1.4214137));
-    let a4 = Vector::new(F::new(-1.453152));
-    let a5 = Vector::new(F::new(1.0614054));
-    let one = Vector::new(F::new(1.0));
+    let p = Vector::new(F::new(0.3275911f32));
+    let a1 = Vector::new(F::new(0.2548296f32));
+    let a2 = Vector::new(F::new(-0.28449674f32));
+    let a3 = Vector::new(F::new(1.4214137f32));
+    let a4 = Vector::new(F::new(-1.453152f32));
+    let a5 = Vector::new(F::new(1.0614054f32));
+    let one = Vector::new(F::new(1.0f32));
 
     let t = one / (one + p * x);
     let tmp = ((((a5 * t + a4) * t) + a3) * t + a2) * t + a1;

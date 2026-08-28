@@ -147,6 +147,9 @@ pub struct Optimizer {
     /// Root scope to allocate variables on
     pub root_scope: Scope,
     /// The `CubeDim` used for range analysis
+    // Populated by the constructor; no pass reads it today. Kept to match
+    // upstream's struct layout rather than diverging the fork.
+    #[allow(dead_code)]
     pub(crate) cube_dim: CubeDim,
     pub(crate) transformers: Vec<Rc<dyn IrTransformer>>,
     pub(crate) processors: Rc<Vec<Box<dyn Processor>>>,

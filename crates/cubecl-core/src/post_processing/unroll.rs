@@ -534,19 +534,19 @@ impl UnrollProcessor {
                     Branch::If(op) => {
                         op.scope.instructions = self.transform_instructions(
                             allocator,
-                            op.scope.instructions.drain(..).collect(),
+                            core::mem::take(&mut op.scope.instructions),
                             mappings,
                         );
                     }
                     Branch::IfElse(op) => {
                         op.scope_if.instructions = self.transform_instructions(
                             allocator,
-                            op.scope_if.instructions.drain(..).collect(),
+                            core::mem::take(&mut op.scope_if.instructions),
                             mappings,
                         );
                         op.scope_else.instructions = self.transform_instructions(
                             allocator,
-                            op.scope_else.instructions.drain(..).collect(),
+                            core::mem::take(&mut op.scope_else.instructions),
                             mappings,
                         );
                     }
@@ -554,27 +554,27 @@ impl UnrollProcessor {
                         for (_, case) in &mut op.cases {
                             case.instructions = self.transform_instructions(
                                 allocator,
-                                case.instructions.drain(..).collect(),
+                                core::mem::take(&mut case.instructions),
                                 mappings,
                             );
                         }
                         op.scope_default.instructions = self.transform_instructions(
                             allocator,
-                            op.scope_default.instructions.drain(..).collect(),
+                            core::mem::take(&mut op.scope_default.instructions),
                             mappings,
                         );
                     }
                     Branch::RangeLoop(op) => {
                         op.scope.instructions = self.transform_instructions(
                             allocator,
-                            op.scope.instructions.drain(..).collect(),
+                            core::mem::take(&mut op.scope.instructions),
                             mappings,
                         );
                     }
                     Branch::Loop(op) => {
                         op.scope.instructions = self.transform_instructions(
                             allocator,
-                            op.scope.instructions.drain(..).collect(),
+                            core::mem::take(&mut op.scope.instructions),
                             mappings,
                         );
                     }
