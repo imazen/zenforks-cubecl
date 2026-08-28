@@ -10,6 +10,55 @@ Upstream release notes are not duplicated here — see
 [the upstream changelog](https://github.com/tracel-ai/cubecl/releases)
 for vanilla cubecl history.
 
+## Workspace
+
+### [Unreleased]
+
+#### Changed
+
+- **All 11 renamed crates bumped to `0.10.2`** (workspace `version`, plus
+  the 40 inter-crate `version = "0.10.1"` pins). The 5 non-renamed leaves
+  (`cubecl-common`, `cubecl-ir`, `cubecl-macros`, `cubecl-macros-internal`,
+  `cubecl-zspace`) stay pinned at upstream's `0.10.0`. **Not published to
+  crates.io** — `imazen/zenmetrics` consumes this as a `git` rev pin.
+
+#### Documentation
+
+- `ZENFORKS_README.md` gains a **Resync log** recording the 2026-08-28
+  upstream survey: `upstream/main` at `9b01400e`, newest upstream tag
+  `v0.11.0-pre.3` at `b566e954`, and the measured reason the fork stays on
+  `v0.10.0` — upstream `cb87b0d2` (PR #1322) replaced the kernel argument
+  model, and every upstream tag after `v0.10.0` is downstream of it.
+
+## zenforks-cubecl-runtime
+
+### [Unreleased]
+
+#### Fixed
+
+- **Worker-thread panics converted to caller-visible errors.** A panic on
+  a cubecl-internal thread is invisible to any `Result` on the calling
+  thread, so the caller receives `Ok` carrying a garbage result with no way
+  to detect the failure — in a batch pipeline that is data poisoning
+  (plausible in-range scores, exit 0). (`385373f6`, refs #4,
+  imazen/zenmetrics#41)
+
+## zenforks-cubecl-cuda
+
+### [Unreleased]
+
+#### Fixed
+
+- **Missing CUDA toolkit no longer panics inside `Context::compile_kernel`.**
+  Adds fallible `try_cuda_path` / `try_include_path` / `try_cccl_include_path`
+  and maps failure to `CompilationError::Generic` in a function that already
+  returned `Result`. `try_include_path` also verifies `include/cuda_runtime.h`
+  actually exists — `cuda_path()` accepts any directory that merely exists, so
+  a driver-only install yielded a header-less path and NVRTC then failed later
+  with a far less obvious message. The panicking wrappers are kept (now
+  documented as panicking) so no consumer breaks. Also replaces
+  `to_str().unwrap()` on include paths with `to_string_lossy`. (`385373f6`)
+
 ## zenforks-cubecl-cpu
 
 ### [0.10.2] - 2026-05-28

@@ -10,9 +10,9 @@ readme.workspace = true
 repository = "https://github.com/imazen/zenforks-cubecl/tree/main/crates/cubecl-cpu"
 # 2026-05-28 (Phase 9zc): bumped to 0.10.2 ahead of workspace.version
 # to publish the multi-cube sync_cube/SharedMemory fix. Other
-# zenforks-cubecl-* crates stay at workspace.version = 0.10.1 since
+# zenforks-cubecl-* crates stay at workspace.version = 0.10.2 since
 # this is a cubecl-cpu-only patch — downstream consumers using
-# zenforks-cubecl = "0.10.1" will pull cubecl-cpu 0.10.2 via cargo's
+# zenforks-cubecl = "0.10.2" will pull cubecl-cpu 0.10.2 via cargo's
 # semver-compatible upgrade.
 version = "0.10.2"
 
@@ -48,18 +48,18 @@ name = "cubecl_cpu"
 cubecl-common = { path = "../cubecl-common", version = "0.10.0", default-features = false, features = [
     "std",
 ] }
-cubecl-core = { package = "zenforks-cubecl-core", path = "../cubecl-core", version = "0.10.1", default-features = false, features = [
+cubecl-core = { package = "zenforks-cubecl-core", path = "../cubecl-core", version = "0.10.2", default-features = false, features = [
     "std",
 ] }
-cubecl-opt = { package = "zenforks-cubecl-opt", path = "../cubecl-opt", version = "0.10.1", default-features = false, features = [
+cubecl-opt = { package = "zenforks-cubecl-opt", path = "../cubecl-opt", version = "0.10.2", default-features = false, features = [
     "std",
 ] }
-cubecl-runtime = { package = "zenforks-cubecl-runtime", path = "../cubecl-runtime", version = "0.10.1", default-features = false, features = [
+cubecl-runtime = { package = "zenforks-cubecl-runtime", path = "../cubecl-runtime", version = "0.10.2", default-features = false, features = [
     "channel-mutex",
     "std",
     "storage-bytes",
 ] }
-cubecl-std = { package = "zenforks-cubecl-std", path = "../cubecl-std", version = "0.10.1", default-features = false }
+cubecl-std = { package = "zenforks-cubecl-std", path = "../cubecl-std", version = "0.10.2", default-features = false }
 
 
 bytemuck = { workspace = true }
@@ -73,10 +73,10 @@ paste = { workspace = true }
 
 [dev-dependencies]
 test-log = { workspace = true, features = ["trace"] }
-cubecl-core = { package = "zenforks-cubecl-core", path = "../cubecl-core", version = "0.10.1", features = [
+cubecl-core = { package = "zenforks-cubecl-core", path = "../cubecl-core", version = "0.10.2", features = [
     "export_tests",
 ] }
-cubecl-std = { package = "zenforks-cubecl-std", path = "../cubecl-std", version = "0.10.1", features = [
+cubecl-std = { package = "zenforks-cubecl-std", path = "../cubecl-std", version = "0.10.2", features = [
     "export_tests",
 ] }
 paste = { workspace = true }
