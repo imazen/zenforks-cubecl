@@ -42,6 +42,10 @@ pub struct WgpuStream {
     /// Used to prevent wgpu staging buffer pool exhaustion during bulk writes
     /// (e.g. model loading with hundreds of tensors).
     pending_write_count: usize,
+    /// The device's `min_storage_buffer_offset_alignment`, cached at
+    /// construction so `register_pipeline` can validate binding offsets
+    /// without cloning `Limits` on every dispatch.
+    storage_binding_alignment: u64,
 }
 
 impl WgpuStream {
@@ -70,6 +74,11 @@ impl WgpuStream {
 
         let poll = WgpuPoll::new(device.clone());
 
+        // Storage-buffer bindings must start on a multiple of this. Read once
+        // here: `Device::limits()` clones the whole `Limits` struct, which is
+        // far too costly to do per dispatch in `register_pipeline`.
+        let storage_binding_alignment = device.limits().min_storage_buffer_offset_alignment as u64;
+
         #[allow(unused_mut)]
         let mut mem_manage =
             WgpuMemManager::new(device.clone(), memory_properties, memory_config, logger);
@@ -91,6 +100,7 @@ impl WgpuStream {
             poll,
             submission_load: SubmissionLoad::default(),
             pending_write_count: 0,
+            storage_binding_alignment,
         }
     }
 
@@ -533,9 +543,42 @@ impl WgpuStream {
 
         let entries = resources
             .enumerate()
-            .map(|(i, r)| wgpu::BindGroupEntry {
-                binding: i as u32,
-                resource: r.as_wgpu_bind_resource(),
+            .map(|(i, r)| {
+                // Every storage-buffer binding offset must be a multiple of the
+                // device's `min_storage_buffer_offset_alignment`. wgpu validates
+                // this inside `create_bind_group`, and because this runs on the
+                // device-service thread its error arrives as a PANIC that no
+                // `Result` on the caller's thread can observe — the caller just
+                // sees a `CallError` unwrap, or worse, a silently missing
+                // dispatch. Check it here so the message names the actual cause.
+                //
+                // The offsets cubecl generates itself are always aligned (the
+                // memory pool's own sub-allocation uses `ComputeStorage::
+                // alignment`). An unaligned offset therefore means a CALLER
+                // built a sub-view by hand — `Handle::offset_start(bytes)` with
+                // a byte count that is not a multiple of this alignment. That is
+                // easy to hit when slicing a row-strip out of a 2-D buffer whose
+                // row stride is smaller than the alignment (e.g. an image-pyramid
+                // level narrower than `alignment / bytes_per_element` pixels).
+                let align = self.storage_binding_alignment;
+                assert!(
+                    align == 0 || r.offset % align == 0,
+                    "cubecl-wgpu: storage buffer binding {i} starts at offset {} \
+                     which is not a multiple of this device's \
+                     min_storage_buffer_offset_alignment ({align}). cubecl's own \
+                     allocations are always aligned, so this offset came from a \
+                     caller-built sub-view — check any `Handle::offset_start(..)` \
+                     on this dispatch and round the byte offset to a multiple of \
+                     {align} (passing the leftover element offset to the kernel \
+                     instead). Backends without an alignment requirement (CUDA, \
+                     HIP) accept the same code, which is why this only surfaces \
+                     on wgpu/Metal.",
+                    r.offset
+                );
+                wgpu::BindGroupEntry {
+                    binding: i as u32,
+                    resource: r.as_wgpu_bind_resource(),
+                }
             })
             .collect::<Vec<_>>();
 

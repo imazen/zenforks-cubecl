@@ -287,9 +287,17 @@ pub(crate) fn create_server(setup: WgpuSetup, options: RuntimeOptions) -> WgpuSe
         adapter_info.subgroup_max_size = 128;
     }
 
+    // The main memory pool is created with `BufferUsages::STORAGE` and the
+    // uniform pool with `UNIFORM | STORAGE`, so a sub-allocation out of either
+    // can end up bound as a storage buffer. Aligning only to
+    // `min_uniform_buffer_offset_alignment` is therefore not enough: on any
+    // device that reports a LARGER storage alignment, cubecl's own pool
+    // offsets would be rejected by `create_bind_group`. Take the max of both.
     let mem_props = MemoryDeviceProperties {
         max_page_size: limits.max_storage_buffer_binding_size,
-        alignment: limits.min_uniform_buffer_offset_alignment as u64,
+        alignment: limits
+            .min_uniform_buffer_offset_alignment
+            .max(limits.min_storage_buffer_offset_alignment) as u64,
     };
     let max_count = adapter_limits.max_compute_workgroups_per_dimension;
     let hardware_props = HardwareProperties {
