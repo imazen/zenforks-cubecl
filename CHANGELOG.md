@@ -30,6 +30,37 @@ for vanilla cubecl history.
   `v0.10.0` — upstream `cb87b0d2` (PR #1322) replaced the kernel argument
   model, and every upstream tag after `v0.10.0` is downstream of it.
 
+## zenforks-cubecl-wgpu
+
+### [Unreleased]
+
+#### Fixed
+
+- **Memory pool aligned to the wrong limit.** `create_server` derived
+  `MemoryDeviceProperties.alignment` from `min_uniform_buffer_offset_alignment`
+  alone, but the main pool is created with `BufferUsages::STORAGE` and the
+  uniform pool with `UNIFORM | STORAGE`, so a sub-allocation from either can be
+  bound as a storage buffer — governed by `min_storage_buffer_offset_alignment`.
+  On a device reporting a larger storage alignment, cubecl's own pool offsets
+  would be rejected by `create_bind_group`. Now takes the max of both. Latent on
+  Apple Silicon (both report 256), but wrong by construction. (`f528c4b5`)
+- **Unaligned binding offsets panicked on the device-service thread with a
+  message naming neither the cause nor the caller.** `register_pipeline` handed
+  resource offsets to `create_bind_group` unchecked; wgpu validates there, and
+  on a `DSD-*` thread the error arrives as a panic no `Result` on the caller's
+  thread can observe (the caller saw `client.rs: called Result::unwrap() on an
+  Err value: CallError`). Now asserts each offset against the device's
+  `min_storage_buffer_offset_alignment` — cached in `WgpuStream` at construction,
+  since `Device::limits()` clones the whole `Limits` struct — and reports the
+  offset, the required alignment, and the fact that cubecl's own allocations are
+  always aligned, so an unaligned one came from a caller-built
+  `Handle::offset_start(..)` sub-view. Same failure class as `385373f6`. This
+  makes the failure honest and actionable; it does not make an unaligned
+  sub-view work (the caller must round down and pass the leftover element offset
+  to the kernel). Found via imazen/zenmetrics cvvdp-gpu's Mode B strip walker,
+  whose image-pyramid levels have row strides below 256 bytes;
+  imazen/zenmetrics#24. (`f528c4b5`)
+
 ## zenforks-cubecl-runtime
 
 ### [Unreleased]
