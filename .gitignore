@@ -31,3 +31,6 @@ Cargo.lock
 
 # Multi-agent coordination marker (per ~/.claude/CLAUDE.md)
 .workongoing
+
+# Jujutsu colocated repo state (per ~/.claude/CLAUDE.md)
+.jj/
