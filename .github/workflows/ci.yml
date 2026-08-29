@@ -127,6 +127,11 @@ jobs:
     runs-on: ubuntu-24.04
     needs: [prepare-checks, code-quality]
     strategy:
+      # The legs test different toolchains, so one failing says nothing about
+      # the other — and the default fail-fast cancels the survivor, destroying
+      # the evidence needed to tell a stable-only regression from an MSRV-only
+      # one, or either from an intermittent failure. Let both report.
+      fail-fast: false
       matrix:
         rust: [stable, prev]
         include:
