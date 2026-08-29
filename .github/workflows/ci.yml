@@ -32,14 +32,18 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Exists to republish the workflow-level `env.RUST_PREVIOUS_VERSION` as a job
+  # output. The `env` context is not available to `jobs.<id>.strategy` but is
+  # available to `jobs.<id>.outputs`, so the MSRV leg of linux-std-tests can
+  # only reach the value via `needs.prepare-checks.outputs.rust-prev-version`.
+  # A job must declare at least one step, hence the echo.
   prepare-checks:
     runs-on: ubuntu-22.04
     outputs:
       rust-prev-version: ${{ env.RUST_PREVIOUS_VERSION }}
     steps:
-      - name: Do Nothing
-        if: false
-        run: echo
+      - name: Report pinned previous Rust version
+        run: echo "RUST_PREVIOUS_VERSION=${RUST_PREVIOUS_VERSION}"
 
   code-quality:
     runs-on: ubuntu-22.04
@@ -103,18 +107,12 @@ jobs:
         run: xtask doc tests
 
   linux-std-tests:
-    # tracel's self-provisioned GCP runners — absent on forks
-    if: github.repository == 'tracel-ai/cubecl'
-    runs-on: [
-      '@id:cubecl-linux-std-tests-${{ matrix.rust }}-${{ github.run_id }}-${{ github.run_attempt }}',
-      '@image-family:ubuntu-2404-lts-amd64',
-      '@image-project:ubuntu-os-cloud',
-      '@disk-size:100',
-      '@keep-alive:false',
-      '@machine-type:n2-standard-16',
-      '@os:linux',
-      '@zones:northamerica-northeast1-b'
-      ]
+    # Upstream runs this on tracel's self-provisioned GCP runners
+    # (`@id:cubecl-…`, n2-standard-16). Those labels resolve to nothing here, so
+    # this fork runs the same suite on a GitHub-hosted runner. Do NOT reintroduce
+    # an `if: github.repository == …` guard to silence it — a skipped job reports
+    # as a passing run, which is how this suite went unexecuted for months.
+    runs-on: ubuntu-24.04
     needs: [prepare-checks, code-quality]
     strategy:
       matrix:
@@ -145,18 +143,8 @@ jobs:
         run: xtask test --ci
 
   linux-miri-tests:
-    # tracel's self-provisioned GCP runners — absent on forks
-    if: github.repository == 'tracel-ai/cubecl'
-    runs-on: [
-      '@id:cubecl-linux-miri-tests-${{ matrix.rust }}-${{ github.run_id }}-${{ github.run_attempt }}',
-      '@image-family:ubuntu-2404-lts-amd64',
-      '@image-project:ubuntu-os-cloud',
-      '@disk-size:100',
-      '@keep-alive:false',
-      '@machine-type:n2-standard-16',
-      '@os:linux',
-      '@zones:northamerica-northeast1-b'
-      ]
+    # Same GCP-runner substitution as linux-std-tests above.
+    runs-on: ubuntu-24.04
     needs: [prepare-checks, code-quality]
     strategy:
       matrix:
