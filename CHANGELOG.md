@@ -35,12 +35,30 @@ for vanilla cubecl history.
   GitHub-hosted `ubuntu-24.04` runner (matching upstream's
   `ubuntu-2404-lts-amd64` image family) with no repository guard.
   (`75582530`)
+
+  First execution — run `33258627184`, read from the job logs rather than
+  the check marks — passed clean: **1,483 tests across 31 binaries on each
+  of the stable (1.98.0) and MSRV (1.92.0) legs, 0 failed**, plus 38
+  `cubecl-common` tests under `cargo miri test` in UB-only mode. Across the
+  21 CI runs preceding it, these two jobs had concluded `skipped` 30 times
+  and `cancelled` 11 times, and `success` **zero** times. That clean result
+  is only clean because the `xtask test` breakage below was fixed in the
+  same push; run as it stood, the job would have failed at
+  `-p cubecl-wgpu`. The fork's divergence from upstream (crate renames,
+  pinned upload, Metal f64 downgrade, worker-thread panic removal,
+  storage-binding alignment) turns out not to have broken anything the suite
+  covers — but that is now established rather than assumed.
 - **`xtask test` still referenced pre-rename package names.** `xtask test --ci`
   excluded `cubecl-cuda`/`cubecl-hip` and ran its extra
   `exclusive-memory-only` pass against `-p cubecl-wgpu` — none of which are
   package names in this workspace since the `zenforks-cubecl-*` rename.
   `3823bd0b` fixed the same staleness in `check.rs`, which runs on every CI
-  run; `test.rs` was missed because it had never executed once. (`8fdd5bc1`)
+  run; `test.rs` was missed because it had never executed once. Both spellings
+  fail, differently: `-p cubecl-wgpu` is a hard `package ID specification …
+  did not match any packages` error, while `--exclude cubecl-cuda` is only a
+  warning — so the exclusion silently would not have applied and CUDA/HIP
+  would have been pulled into a CI run with no toolkit installed.
+  (`8fdd5bc1`)
 - **`runtime_tests` was outside the lint gate entirely.** `xtask check lint`
   runs `cargo clippy --no-deps` with default features, so it compiles no test
   or bench targets and nothing behind a feature gate. cubecl-core's
@@ -50,6 +68,15 @@ for vanilla cubecl history.
   surfaced are annotated in `d4a78e36`. `Float::new` takes `f32`, so those
   literals were already `f32` by fallback — the suffixes are annotations, not
   value changes.
+- **Typos gate read git SHAs as prose.** Citing commit `87ba7451` failed the
+  check: the hash was split into words and a two-letter fragment of it was
+  reported as a misspelling. Since every entry here must name its commit,
+  hashes are permanent content and future ones can collide with dictionary
+  words by chance. `typos.toml` now ignores backtick-quoted hex via
+  `extend-ignore-re`, rather than adding that fragment as a global word
+  exception. Verified against typos 1.23.4 — the version CI installs — that
+  the repo is clean and that the same fragment appearing in ordinary prose is
+  still flagged. (`4570872b`)
 
 #### Changed
 
