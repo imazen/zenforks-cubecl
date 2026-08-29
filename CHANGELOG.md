@@ -78,8 +78,34 @@ for vanilla cubecl history.
   the repo is clean and that the same fragment appearing in ordinary prose is
   still flagged. (`4570872b`)
 
+#### Known issues
+
+Both surfaced only once `linux-std-tests` began executing, and both are
+recorded rather than suppressed — neither is disabled, retried away, or
+`#[ignore]`d. Across the first six std-leg executions, four passed clean
+(1,483 tests each) and two failed, for two unrelated reasons:
+
+- **`cubecl_wgpu` lib tests intermittently SIGSEGV on the CI runner.** The
+  380-test GPU suite crashed with `signal: 11, SIGSEGV: invalid memory
+  reference` roughly a dozen tests in (run `33264442368`), having passed
+  in full twice before on identical code. Runs against Mesa/lavapipe
+  software Vulkan on `ubuntu-24.04`; whether the fault is in the driver or
+  in the runtime path under it is not yet established, and calling it a
+  flake would be a guess. Needs its own investigation — the value of the
+  job is that this is now visible at all.
+- **`tracel-llvm-bundler` downloads an LLVM tarball during `build.rs`.**
+  `zenforks-cubecl-cpu` pulls `tracel-llvm-bundler`, whose build script
+  fetches `linux-x64.tar.xz` from a GitHub release at build time; that
+  download failed once (run `33264442368`), failing the whole job. Every CI
+  run therefore depends on a third-party release asset being reachable.
+
 #### Added
 
+- **`fail-fast: false` on the `linux-std-tests` matrix.** The stable and
+  MSRV legs test different toolchains, so one failing says nothing about the
+  other, yet the default cancelled the survivor — both failures above
+  destroyed the sibling's result, which is precisely the evidence needed to
+  tell a toolchain-specific regression from an intermittent one. (`72f033e9`)
 - **`workflow_dispatch` on the CI workflow.** Both triggers filter out
   `!**.md`, so a docs-only push produces no run at all — `main@origin` then
   sits at a commit CI has never evaluated while the newest run still points
