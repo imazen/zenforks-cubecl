@@ -58,6 +58,37 @@ The fork's versions track upstream:
   panic removal, CI/lint fixes. **Not published to crates.io** — consumed
   by zenmetrics as a `git` rev pin (see "Resync log" below).
 
+## Release path
+
+Verified 2026-08-29. Releases are cut **by hand**, not by CI:
+
+- `scripts/publish_0_10_1.sh` and `scripts/publish_remaining.sh` loop
+  `cargo publish -p <crate>` from a developer machine. Neither runs tests,
+  clippy, `fmt`, or a dry run first — grep them for `test`/`clippy`/`fmt`
+  and you get nothing.
+- **`.github/workflows/publish.yml` is dead weight.** Its 16
+  `publish-crate` jobs are inherited from upstream and were never adapted:
+  all 16 name upstream crates, and 11 of those names
+  (`cubecl-core`, `cubecl-wgpu`, `cubecl-runtime`, …) are not packages in
+  this workspace at all since the `zenforks-cubecl-*` rename, while the
+  other 5 (`cubecl-common`, `cubecl-ir`, `cubecl-macros`,
+  `cubecl-macros-internal`, `cubecl-zspace`) are `publish = false`. Its
+  `push: tags: v*` trigger also cannot match this fork's `zenforks-*` tag
+  scheme. It has never run.
+- **No gate anywhere on that path.** No `publish.yml` job carries an `if:`
+  or a `needs:` on a CI job — the `needs:` edges only order the crates
+  against each other — and the reusable workflow it calls
+  (`tracel-ai/github-actions/.github/workflows/publish-crate.yml@v8`) is
+  checkout → install rust → publish, with no verification step of its own.
+  `workflow_dispatch` on it is therefore ungated, though today it would
+  fail on package lookup rather than mispublish.
+
+Consequence worth stating plainly: every `zenforks-cubecl-*` version on
+crates.io was published from a tree whose test suite had never executed
+once (see the CHANGELOG entry for 2026-08-29). Fixing `publish.yml` — or
+deleting it in favour of the scripts — is open work; it needs a decision
+about the intended release process, so nothing here changes it.
+
 ## Resync log
 
 ### 2026-08-28 — upstream surveyed, fork deliberately held at v0.10.0
