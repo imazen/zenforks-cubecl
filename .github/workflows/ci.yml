@@ -1,6 +1,11 @@
 name: CI
 
 on:
+  # `paths` below excludes `**.md`, so a docs-only push produces no run at all
+  # and leaves `main` sitting at a commit CI has never evaluated — with the most
+  # recent run still pointing at an older SHA. Without a manual trigger there is
+  # no way to close that gap; hence workflow_dispatch.
+  workflow_dispatch:
   push:
     branches:
       - main
