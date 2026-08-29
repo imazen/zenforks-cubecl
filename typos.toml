@@ -1,5 +1,10 @@
 [default]
 extend-ignore-identifiers-re = ["CU_DEVICE_ATTRIBUTE_*", "HSA_*"]
+# Backtick-quoted git SHAs. CHANGELOG.md is required to cite the commit behind
+# every entry, and a hex hash can spell a near-word by chance — `87ba7451` was
+# read as `ba` -> `by`/`be`. Scoped to backticked hex so ordinary prose is
+# still checked; this is not a general `ba` exception.
+extend-ignore-re = ["`[0-9a-f]{7,40}`"]
 
 [default.extend-words]
 # JOD = Just-Objectionable-Difference, the ColorVideoVDP (cvvdp) metric unit
