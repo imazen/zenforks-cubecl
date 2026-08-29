@@ -5,7 +5,7 @@ use cubecl::prelude::*;
 #[cube(launch)]
 pub fn kernel_assign<F: Float>(output: &mut Array<F>) {
     if UNIT_POS == 0 {
-        let item = F::new(5.0);
+        let item = F::new(5.0_f32);
         output[0] = item;
     }
 }
@@ -13,14 +13,14 @@ pub fn kernel_assign<F: Float>(output: &mut Array<F>) {
 #[cube(launch)]
 pub fn kernel_add_assign_array<F: Float, N: Size>(output: &mut Array<Vector<F, N>>) {
     if UNIT_POS == 0 {
-        output[0] = Vector::new(F::new(5.0));
-        output[0] += Vector::new(F::new(1.0));
+        output[0] = Vector::new(F::new(5.0_f32));
+        output[0] += Vector::new(F::new(1.0_f32));
     }
 }
 
 #[cube(launch)]
 pub fn kernel_add_assign_vector<F: Float, N: Size>(output: &mut Array<Vector<F, N>>) {
-    let mut vector = Vector::new(F::new(1.0));
+    let mut vector = Vector::new(F::new(1.0_f32));
 
     if UNIT_POS == 0 {
         #[unroll]
