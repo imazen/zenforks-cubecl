@@ -78,6 +78,16 @@ for vanilla cubecl history.
   the repo is clean and that the same fragment appearing in ordinary prose is
   still flagged. (`4570872b`)
 
+#### Added
+
+- **`workflow_dispatch` on the CI workflow.** Both triggers filter out
+  `!**.md`, so a docs-only push produces no run at all — `main@origin` then
+  sits at a commit CI has never evaluated while the newest run still points
+  at an older SHA, which is the same "green that means nothing" shape as the
+  skipped jobs above. Hit while landing these entries. There was no manual
+  trigger to close the gap without inventing a non-doc change; there is now.
+  (`6dd723e3`)
+
 #### Changed
 
 - **`prepare-checks` given a real step.** Its only step was `Do Nothing`
