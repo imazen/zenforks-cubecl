@@ -14,7 +14,52 @@ for vanilla cubecl history.
 
 ### [Unreleased]
 
+#### Fixed
+
+- **CI reported green while the entire test suite was skipped.** `ci.yml`
+  gated `linux-std-tests` and `linux-miri-tests` on
+  `github.repository == 'tracel-ai/cubecl'` (`e0c5981a`, 2026-06-11), so on
+  `imazen/zenforks-cubecl` both jobs were skipped — logged as `-` in `0s` —
+  while the run still reported ✓. Every push to this fork since then, and
+  every fork-specific change in it (the crate renames, the pinned-upload
+  feature, the Metal f64 downgrade, the worker-thread panic removal, the
+  storage-binding alignment fix) landed with **zero** executed tests. The
+  MSRV leg (`RUST_PREVIOUS_VERSION = 1.92.0`) and the miri UB run rode along
+  in the same skip. Only `prepare-checks`, `code-quality` and
+  `documentation` ever ran.
+
+  The guard was a symptom fix, not the cause. `runs-on` targets tracel's
+  self-provisioned GCP runner labels (`@id:cubecl-…`, `n2-standard-16`),
+  which resolve to nothing outside upstream; before the guard the jobs
+  queued forever and held the run hostage. Both jobs now run on a
+  GitHub-hosted `ubuntu-24.04` runner (matching upstream's
+  `ubuntu-2404-lts-amd64` image family) with no repository guard.
+  (`75582530`)
+- **`xtask test` still referenced pre-rename package names.** `xtask test --ci`
+  excluded `cubecl-cuda`/`cubecl-hip` and ran its extra
+  `exclusive-memory-only` pass against `-p cubecl-wgpu` — none of which are
+  package names in this workspace since the `zenforks-cubecl-*` rename.
+  `3823bd0b` fixed the same staleness in `check.rs`, which runs on every CI
+  run; `test.rs` was missed because it had never executed once. (`8fdd5bc1`)
+- **`runtime_tests` was outside the lint gate entirely.** `xtask check lint`
+  runs `cargo clippy --no-deps` with default features, so it compiles no test
+  or bench targets and nothing behind a feature gate. cubecl-core's
+  `runtime_tests` — the GPU suite that ships in the published crate, gated on
+  `export_tests` — was never linted. An explicit `--all-targets` clippy pass
+  now covers it (`87ba7451`); the 26 `float_literal_f32_fallback` findings it
+  surfaced are annotated in `d4a78e36`. `Float::new` takes `f32`, so those
+  literals were already `f32` by fallback — the suffixes are annotations, not
+  value changes.
+
 #### Changed
+
+- **`prepare-checks` given a real step.** Its only step was `Do Nothing`
+  guarded `if: false`. The job is not vestigial: the `env` context is
+  unavailable to `jobs.<id>.strategy` but available to `jobs.<id>.outputs`,
+  so the MSRV matrix leg of `linux-std-tests` can only reach
+  `RUST_PREVIOUS_VERSION` through
+  `needs.prepare-checks.outputs.rust-prev-version`, and a job must declare at
+  least one step. It now echoes the value it exports. (`75582530`)
 
 - **All 11 renamed crates bumped to `0.10.2`** (workspace `version`, plus
   the 40 inter-crate `version = "0.10.1"` pins). The 5 non-renamed leaves
