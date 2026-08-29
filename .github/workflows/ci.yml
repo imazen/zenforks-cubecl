@@ -78,6 +78,13 @@ jobs:
       - name: Lint
         run: xtask check lint
       # --------------------------------------------------------------------------------
+      # `xtask check lint` shells out to `cargo clippy --no-deps` with default
+      # features only: no test/bench targets, and nothing behind a feature gate.
+      # cubecl-core's `runtime_tests` (the GPU suite that ships in the published
+      # crate, gated on `export_tests`) was therefore never linted at all.
+      - name: Lint (all targets)
+        run: cargo clippy --workspace --all-targets --no-deps --color=always -- --deny warnings
+      # --------------------------------------------------------------------------------
       - name: Typos
         uses: tracel-ai/github-actions/check-typos@v10
 
