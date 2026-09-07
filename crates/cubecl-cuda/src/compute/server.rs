@@ -710,15 +710,18 @@ impl CudaServer {
             .iter()
             .map(|it| it.binding.clone())
             .chain(bindings.buffers)
-            .map(|binding| command.resource(binding).expect("Resource to exist."))
-            .collect::<Vec<_>>();
+            // Propagate instead of expecting: after a failed reservation the
+            // resource genuinely does not exist, and this runs on the server
+            // thread where a panic is invisible to the caller
+            // (imazen/zenforks-cubecl#1). `launch_checked` already returns
+            // Result, and its caller records the error on the stream.
+            .map(|binding| command.resource(binding))
+            .collect::<Result<Vec<_>, _>>()?;
 
         let mut tensor_maps = Vec::with_capacity(bindings.tensor_maps.len());
 
         for TensorMapBinding { map, binding } in bindings.tensor_maps.into_iter() {
-            let resource = command
-                .resource(binding)
-                .expect("Tensor map resource exists.");
+            let resource = command.resource(binding)?;
             let device_ptr = resource.ptr as *mut c_void;
 
             let mut map_ptr = MaybeUninit::zeroed();
