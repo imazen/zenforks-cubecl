@@ -16,6 +16,40 @@ for vanilla cubecl history.
 
 #### Fixed
 
+- **A failed device allocation was unsurvivable, and invisible.** Three layers
+  each assumed a memory reservation never fails, so a device OOM panicked on a
+  cubecl worker thread — where no `Result` on the calling thread can observe
+  it — and the caller sailed on with a garbage result. Fixing only the first
+  layer turns one panic into a cascade; all three were needed:
+
+  - `CudaServer::initialize_memory` unwrapped `command.reserve(size)`. It
+    returns `()`, so the failure had nowhere to go. It now records the error on
+    the stream (`command.error(err.into()); return;` — the idiom the sibling
+    `write` in that file already uses) and the failure surfaces as
+    `ServerError::ServerUnhealthy`.
+  - `EventStreamBackend::handle_cursor` returned `u64` while both backend
+    impls unwrapped `MemoryManagement::get_cursor`, which returns
+    `Result<_, IoError>`. A handle whose memory is not live therefore panicked
+    once **per handle** inside `update_shared_bindings`. A defaulted
+    `handle_cursor_checked -> Option<u64>` is added and cubecl calls that;
+    `None` is not an error, since a handle that was never bound cannot have
+    been written by any stream and so carries no ordering constraint. **Not a
+    breaking change** — `handle_cursor` keeps its signature and the default
+    delegates to it, so existing implementors compile unchanged.
+  - `CudaServer::launch_checked` had two `.expect("Resource to exist.")`
+    lookups. It already returns `Result<(), ServerError>`, so `?` sufficed.
+
+  MEASURED on a 6 GB GTX 1060 (ssim2 at 8192×8192, a real device OOM), panics
+  per run: **1 → 399 → 213 → 0**, with the error propagating cleanly to the
+  consumer at every stage after the first. No regression on the healthy path:
+  timings within a few percent of baseline and cross-backend score deltas
+  byte-identical.
+
+  Note `cargo semver-checks` reported "no semver update required" for an
+  earlier, genuinely **breaking** form of this change — it checks added and
+  removed items, not signature changes to existing ones. Do not rely on it for
+  trait changes. (`#6`)
+
 - **CI reported green while the entire test suite was skipped.** `ci.yml`
   gated `linux-std-tests` and `linux-miri-tests` on
   `github.repository == 'tracel-ai/cubecl'` (`e0c5981a`, 2026-06-11), so on
