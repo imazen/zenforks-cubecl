@@ -215,28 +215,17 @@ impl<B: EventStreamBackend> MultiStream<B> {
         handles: impl Iterator<Item = &'a Binding>,
         enforce_healthy: bool,
     ) -> Result<ResolvedStreams<'_, B>, ServerError> {
-        // Health gate runs BEFORE align_streams, not after.
-        //
-        // `align_streams` -> `update_shared_bindings` -> `B::handle_cursor`,
-        // which unwraps a memory lookup. Once an earlier failure has left a
-        // handle unbound -- e.g. a device-OOM recorded by
-        // `initialize_memory` instead of panicking -- that unwrap panics, so
-        // the gate below was never reached: every subsequent operation on the
-        // dead stream panicked instead of getting this error. Checking first
-        // makes the stream's error state terminal, which is the point of
-        // recording it. `get_mut` is an indexed lookup into a pre-allocated
-        // pool, so it is safe to call before the stream is aligned.
-        if enforce_healthy && !B::is_healthy(&self.streams.get_mut(&stream_id).stream) {
+        let analysis = self.align_streams(stream_id, handles);
+
+        let stream = self.streams.get_mut(&stream_id);
+        stream.cursor += 1;
+
+        if enforce_healthy && !B::is_healthy(&stream.stream) {
             return Err(ServerError::Generic {
                 reason: "Can't resolve the stream since it is currently in an error state".into(),
                 backtrace: BackTrace::capture(),
             });
         }
-
-        let analysis = self.align_streams(stream_id, handles);
-
-        let stream = self.streams.get_mut(&stream_id);
-        stream.cursor += 1;
 
         Ok(ResolvedStreams {
             cursor: stream.cursor,
