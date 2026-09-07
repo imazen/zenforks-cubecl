@@ -121,7 +121,19 @@ impl ComputeServer for CudaServer {
             Err(err) => unreachable!("{err:?}"),
         };
 
-        let reserved = command.reserve(size).unwrap();
+        // Device-OOM here used to `.unwrap()` (imazen/zenforks-cubecl#1). This
+        // fn returns `()`, so the failure had nowhere to go but a panic — on a
+        // server thread, where no caller could observe it. `reserve` already
+        // returns `Result<_, IoError>`, and the stream has an error channel for
+        // exactly this: record it and let the next operation surface it as
+        // `ServerError::ServerUnhealthy`, the same shape `write` uses above.
+        let reserved = match command.reserve(size) {
+            Ok(reserved) => reserved,
+            Err(err) => {
+                command.error(err.into());
+                return;
+            }
+        };
         command.bind(reserved, memory);
     }
 
