@@ -94,11 +94,13 @@ impl EventStreamBackend for CudaStreamBackend {
         event.wait_sync()
     }
 
-    fn handle_cursor(stream: &Self::Stream, binding: &Binding) -> u64 {
+    fn handle_cursor(stream: &Self::Stream, binding: &Binding) -> Option<u64> {
+        // `get_cursor` already reports a missing slice; surface that as `None`
+        // rather than unwrapping (imazen/zenforks-cubecl#1).
         stream
             .memory_management_gpu
             .get_cursor(binding.memory.clone())
-            .unwrap()
+            .ok()
     }
 
     fn is_healthy(stream: &Self::Stream) -> bool {

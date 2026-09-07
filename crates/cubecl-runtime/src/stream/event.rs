@@ -27,8 +27,16 @@ pub trait EventStreamBackend: 'static {
 
     /// Initializes and returns a new stream associated with the given stream ID.
     fn create_stream(&self) -> Self::Stream;
-    /// Returns the cursor of the given handle on the given stream.
-    fn handle_cursor(stream: &Self::Stream, handle: &Binding) -> u64;
+    /// Returns the cursor of the given handle on the given stream, or `None`
+    /// when that handle's memory is not live on it.
+    ///
+    /// `None` is not an error: a handle whose memory was never bound (a failed
+    /// reservation) or has already been freed cannot have been written by any
+    /// stream, so it carries no ordering constraint. Backends must NOT unwrap
+    /// the underlying lookup here — doing so turned a single device-OOM into
+    /// one panic per handle, on threads no caller could observe
+    /// (imazen/zenforks-cubecl#1).
+    fn handle_cursor(stream: &Self::Stream, handle: &Binding) -> Option<u64>;
     /// Returns whether the stream can access new tasks.
     fn is_healthy(stream: &Self::Stream) -> bool;
 
@@ -265,7 +273,11 @@ impl<B: EventStreamBackend> MultiStream<B> {
         for handle in handles {
             let index = stream_index(&handle.stream, self.max_streams);
             let stream = unsafe { self.streams.get_mut_index(index) };
-            let cursor_handle = B::handle_cursor(&stream.stream, handle);
+            // No cursor => the memory is not live on that stream, so there is
+            // nothing to synchronise against and no constraint to record.
+            let Some(cursor_handle) = B::handle_cursor(&stream.stream, handle) else {
+                continue;
+            };
 
             // We only add the info to be consider if the handle stream is different from the current
             // stream.
@@ -518,8 +530,8 @@ mod tests {
             Ok(())
         }
 
-        fn handle_cursor(_stream: &Self::Stream, _handle: &Binding) -> u64 {
-            0
+        fn handle_cursor(_stream: &Self::Stream, _handle: &Binding) -> Option<u64> {
+            Some(0)
         }
 
         fn is_healthy(_stream: &Self::Stream) -> bool {
