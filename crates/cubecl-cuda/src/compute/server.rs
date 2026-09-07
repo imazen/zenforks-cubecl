@@ -121,7 +121,19 @@ impl ComputeServer for CudaServer {
             Err(err) => unreachable!("{err:?}"),
         };
 
-        let reserved = command.reserve(size).unwrap();
+        // Device-OOM here used to `.unwrap()` (imazen/zenforks-cubecl#1). This
+        // fn returns `()`, so the failure had nowhere to go but a panic — on a
+        // server thread, where no caller could observe it. `reserve` already
+        // returns `Result<_, IoError>`, and the stream has an error channel for
+        // exactly this: record it and let the next operation surface it as
+        // `ServerError::ServerUnhealthy`, the same shape `write` uses above.
+        let reserved = match command.reserve(size) {
+            Ok(reserved) => reserved,
+            Err(err) => {
+                command.error(err.into());
+                return;
+            }
+        };
         command.bind(reserved, memory);
     }
 
@@ -698,15 +710,18 @@ impl CudaServer {
             .iter()
             .map(|it| it.binding.clone())
             .chain(bindings.buffers)
-            .map(|binding| command.resource(binding).expect("Resource to exist."))
-            .collect::<Vec<_>>();
+            // Propagate instead of expecting: after a failed reservation the
+            // resource genuinely does not exist, and this runs on the server
+            // thread where a panic is invisible to the caller
+            // (imazen/zenforks-cubecl#1). `launch_checked` already returns
+            // Result, and its caller records the error on the stream.
+            .map(|binding| command.resource(binding))
+            .collect::<Result<Vec<_>, _>>()?;
 
         let mut tensor_maps = Vec::with_capacity(bindings.tensor_maps.len());
 
         for TensorMapBinding { map, binding } in bindings.tensor_maps.into_iter() {
-            let resource = command
-                .resource(binding)
-                .expect("Tensor map resource exists.");
+            let resource = command.resource(binding)?;
             let device_ptr = resource.ptr as *mut c_void;
 
             let mut map_ptr = MaybeUninit::zeroed();

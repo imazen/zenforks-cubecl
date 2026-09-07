@@ -28,7 +28,29 @@ pub trait EventStreamBackend: 'static {
     /// Initializes and returns a new stream associated with the given stream ID.
     fn create_stream(&self) -> Self::Stream;
     /// Returns the cursor of the given handle on the given stream.
+    ///
+    /// # Panics
+    /// Implementations may panic when the handle's memory is not live. Prefer
+    /// overriding [`Self::handle_cursor_checked`], which cubecl itself calls;
+    /// this method is retained for API compatibility.
     fn handle_cursor(stream: &Self::Stream, handle: &Binding) -> u64;
+
+    /// Cursor of the handle's memory on `stream`, or `None` when that memory
+    /// is not live.
+    ///
+    /// `None` is not an error: a handle whose memory was never bound (a failed
+    /// reservation) or has already been freed cannot have been written by any
+    /// stream, so it carries no ordering constraint.
+    ///
+    /// The default delegates to [`Self::handle_cursor`] so existing
+    /// implementors keep compiling and keep their current behaviour. Backends
+    /// SHOULD override it: the default inherits whatever panic
+    /// `handle_cursor` has, and unwrapping there turned a single device-OOM
+    /// into one panic per handle, on threads no caller could observe
+    /// (imazen/zenforks-cubecl#1).
+    fn handle_cursor_checked(stream: &Self::Stream, handle: &Binding) -> Option<u64> {
+        Some(Self::handle_cursor(stream, handle))
+    }
     /// Returns whether the stream can access new tasks.
     fn is_healthy(stream: &Self::Stream) -> bool;
 
@@ -265,7 +287,11 @@ impl<B: EventStreamBackend> MultiStream<B> {
         for handle in handles {
             let index = stream_index(&handle.stream, self.max_streams);
             let stream = unsafe { self.streams.get_mut_index(index) };
-            let cursor_handle = B::handle_cursor(&stream.stream, handle);
+            // No cursor => the memory is not live on that stream, so there is
+            // nothing to synchronise against and no constraint to record.
+            let Some(cursor_handle) = B::handle_cursor_checked(&stream.stream, handle) else {
+                continue;
+            };
 
             // We only add the info to be consider if the handle stream is different from the current
             // stream.

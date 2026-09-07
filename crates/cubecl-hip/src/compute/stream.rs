@@ -127,6 +127,15 @@ impl EventStreamBackend for HipStreamBackend {
             .unwrap()
     }
 
+    fn handle_cursor_checked(stream: &Self::Stream, binding: &Binding) -> Option<u64> {
+        // `get_cursor` already reports a missing slice; surface that as `None`
+        // rather than unwrapping (imazen/zenforks-cubecl#1).
+        stream
+            .memory_management_gpu
+            .get_cursor(binding.memory.clone())
+            .ok()
+    }
+
     fn is_healthy(stream: &Self::Stream) -> bool {
         stream.errors.is_empty()
     }
