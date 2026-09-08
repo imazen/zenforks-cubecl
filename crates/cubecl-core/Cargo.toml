@@ -8,7 +8,7 @@ description = "CubeCL core create"
 edition.workspace = true
 keywords = []
 license.workspace = true
-name = "cubecl-core"
+name = "zenforks-cubecl-core"
 readme.workspace = true
 repository = "https://github.com/tracel-ai/cubecl/tree/main/crates/cubecl-core"
 version.workspace = true
@@ -29,6 +29,10 @@ tokio = ["cubecl-runtime/tokio"]
 
 tracing = ["dep:tracing", "cubecl-runtime/tracing", "cubecl-ir/tracing"]
 
+
+[lib]
+name = "cubecl_core"
+
 [dependencies]
 # Runtime Deps
 log = { workspace = true }
@@ -38,7 +42,7 @@ tracing = { workspace = true, features = ["attributes"], optional = true }
 cubecl-ir = { path = "../cubecl-ir", version = "=0.11.0-pre.3", default-features = false, features = [
     "serde",
 ] }
-cubecl-runtime = { path = "../cubecl-runtime", version = "=0.11.0-pre.3", default-features = false }
+cubecl-runtime = { package = "zenforks-cubecl-runtime", path = "../cubecl-runtime", version = "=0.11.0-pre.3", default-features = false }
 cubecl-zspace = { path = "../cubecl-zspace", version = "=0.11.0-pre.3" }
 
 bitflags = { workspace = true }
