@@ -56,6 +56,10 @@ enum Timings {
 pub struct WgpuStream {
     pub mem_manage: WgpuMemManager,
     pub device: wgpu::Device,
+    /// The device's `min_storage_buffer_offset_alignment`, cached at
+    /// construction: `Device::limits()` clones the whole `Limits` struct, far
+    /// too costly to do per dispatch.
+    storage_binding_alignment: u64,
     compute_pass: Option<wgpu::ComputePass<'static>>,
     timings: Timings,
     tasks_count: usize,
@@ -88,6 +92,44 @@ pub struct WgpuStream {
     /// The launches recorded since `begin_capture`, drained into a
     /// [`WgpuGraph`] at `end_capture`.
     recording: GraphRecording,
+}
+
+impl WgpuStream {
+    /// Validate storage-buffer binding offsets before handing them to wgpu.
+    ///
+    /// Every storage-buffer binding offset must be a multiple of the device's
+    /// `min_storage_buffer_offset_alignment`. wgpu validates this inside
+    /// `create_bind_group`, and because that runs on the device-service thread
+    /// its error arrives as a PANIC no `Result` on the caller's thread can
+    /// observe — the caller sees a `CallError` unwrap, or worse, a silently
+    /// missing dispatch. Checking here names the actual cause.
+    ///
+    /// The offsets cubecl generates itself are always aligned (the memory
+    /// pool's sub-allocation uses `ComputeStorage::alignment`). An unaligned
+    /// offset therefore means a CALLER hand-built a sub-view — e.g.
+    /// `Handle::offset_start(bytes)` with a byte count that is not a multiple
+    /// of this alignment, easy to hit when slicing a row-strip out of a 2-D
+    /// buffer whose row pitch is not so aligned.
+    fn check_binding_alignment(&self, entries: &[wgpu::BindGroupEntry<'_>]) {
+        let align = self.storage_binding_alignment;
+        if align == 0 {
+            return;
+        }
+        for e in entries {
+            if let wgpu::BindingResource::Buffer(b) = &e.resource
+                && b.offset % align != 0
+            {
+                panic!(
+                    "cubecl-wgpu: storage-buffer binding {} has offset {}, which is not a \
+                     multiple of this device's min_storage_buffer_offset_alignment ({}). \
+                     cubecl's own allocations are always aligned, so this offset came from a \
+                     caller-built sub-view — check any Handle::offset_start(bytes) where the \
+                     byte count is not a multiple of {}.",
+                    e.binding, b.offset, align, align
+                );
+            }
+        }
+    }
 }
 
 impl StreamMemory for WgpuStream {
@@ -154,6 +196,7 @@ impl WgpuStream {
         );
 
         Self {
+            storage_binding_alignment: device.limits().min_storage_buffer_offset_alignment as u64,
             mem_manage,
             compute_pass: None,
             timings,
@@ -816,6 +859,7 @@ impl WgpuStream {
                     resource: r.as_wgpu_bind_resource(),
                 })
                 .collect::<Vec<_>>();
+            self.check_binding_alignment(&entries);
             let group_layout = pipeline.get_bind_group_layout(0);
             self.device.create_bind_group(&wgpu::BindGroupDescriptor {
                 label: None,

@@ -1,6 +1,11 @@
 name: CI
 
 on:
+  # `paths` below excludes `**.md`, so a docs-only push produces no run at all
+  # and leaves `main` sitting at a commit CI has never evaluated — with the most
+  # recent run still pointing at an older SHA. Without a manual trigger there is
+  # no way to close that gap; hence workflow_dispatch.
+  workflow_dispatch:
   push:
     branches:
       - main
@@ -25,21 +30,25 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
-  RUST_PREVIOUS_VERSION: 1.95.0
+  RUST_PREVIOUS_VERSION: 1.92.0
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
+  # Exists to republish the workflow-level `env.RUST_PREVIOUS_VERSION` as a job
+  # output. The `env` context is not available to `jobs.<id>.strategy` but is
+  # available to `jobs.<id>.outputs`, so the MSRV leg of linux-std-tests can
+  # only reach the value via `needs.prepare-checks.outputs.rust-prev-version`.
+  # A job must declare at least one step, hence the echo.
   prepare-checks:
     runs-on: ubuntu-22.04
     outputs:
       rust-prev-version: ${{ env.RUST_PREVIOUS_VERSION }}
     steps:
-      - name: Do Nothing
-        if: false
-        run: echo
+      - name: Report pinned previous Rust version
+        run: echo "RUST_PREVIOUS_VERSION=${RUST_PREVIOUS_VERSION}"
 
   code-quality:
     runs-on: ubuntu-22.04
@@ -55,7 +64,7 @@ jobs:
         uses: actions/checkout@v6
       # --------------------------------------------------------------------------------
       - name: Install Rust
-        uses: tracel-ai/github-actions/install-rust@v11
+        uses: tracel-ai/github-actions/install-rust@v10
         with:
           rust-toolchain: ${{ matrix.toolchain }}
           cache-key: ${{ matrix.rust }}-linux
@@ -72,10 +81,17 @@ jobs:
         run: xtask check format
       # --------------------------------------------------------------------------------
       - name: Lint
-        run: xtask check --ci lint
+        run: xtask check lint
+      # --------------------------------------------------------------------------------
+      # `xtask check lint` shells out to `cargo clippy --no-deps` with default
+      # features only: no test/bench targets, and nothing behind a feature gate.
+      # cubecl-core's `runtime_tests` (the GPU suite that ships in the published
+      # crate, gated on `export_tests`) was therefore never linted at all.
+      - name: Lint (all targets)
+        run: cargo clippy --workspace --all-targets --no-deps --color=always -- --deny warnings
       # --------------------------------------------------------------------------------
       - name: Typos
-        uses: tracel-ai/github-actions/check-typos@v11
+        uses: tracel-ai/github-actions/check-typos@v10
 
   documentation:
     runs-on: ubuntu-22.04
@@ -91,30 +107,31 @@ jobs:
         uses: actions/checkout@v6
       # --------------------------------------------------------------------------------
       - name: Install Rust
-        uses: tracel-ai/github-actions/install-rust@v11
+        uses: tracel-ai/github-actions/install-rust@v10
         with:
           rust-toolchain: ${{ matrix.toolchain }}
           cache-key: ${{ matrix.rust }}-linux
       # --------------------------------------------------------------------------------
       - name: Documentation Build
-        run: xtask doc --ci build
+        run: xtask doc build
       # --------------------------------------------------------------------------------
       - name: Documentation Tests
-        run: xtask doc --ci tests
+        run: xtask doc tests
 
   linux-std-tests:
-    runs-on: [
-      '@id:cubecl-linux-std-tests-${{ matrix.rust }}-${{ github.run_id }}-${{ github.run_attempt }}',
-      '@image-family:ubuntu-2404-lts-amd64',
-      '@image-project:ubuntu-os-cloud',
-      '@disk-size:100',
-      '@keep-alive:false',
-      '@machine-type:n2-standard-16',
-      '@os:linux',
-      '@zones:northamerica-northeast1-b'
-      ]
+    # Upstream runs this on tracel's self-provisioned GCP runners
+    # (`@id:cubecl-…`, n2-standard-16). Those labels resolve to nothing here, so
+    # this fork runs the same suite on a GitHub-hosted runner. Do NOT reintroduce
+    # an `if: github.repository == …` guard to silence it — a skipped job reports
+    # as a passing run, which is how this suite went unexecuted for months.
+    runs-on: ubuntu-24.04
     needs: [prepare-checks, code-quality]
     strategy:
+      # The legs test different toolchains, so one failing says nothing about
+      # the other — and the default fail-fast cancels the survivor, destroying
+      # the evidence needed to tell a stable-only regression from an MSRV-only
+      # one, or either from an intermittent failure. Let both report.
+      fail-fast: false
       matrix:
         rust: [stable, prev]
         include:
@@ -127,32 +144,24 @@ jobs:
         uses: actions/checkout@v6
       # --------------------------------------------------------------------------------
       - name: Install Rust
-        uses: tracel-ai/github-actions/install-rust@v11
+        uses: tracel-ai/github-actions/install-rust@v10
         with:
           rust-toolchain: ${{ matrix.toolchain }}
           cache-key: ${{ matrix.rust }}-linux
           apt-packages: build-essential
       # --------------------------------------------------------------------------------
       - name: Install Mesa
-        uses: tracel-ai/github-actions/install-mesa@v11
+        uses: tracel-ai/github-actions/install-mesa@v10
       # --------------------------------------------------------------------------------
       - name: Install Vulkan SDK
-        uses: tracel-ai/github-actions/install-vulkan-sdk@v11
+        uses: tracel-ai/github-actions/install-vulkan-sdk@v10
       # --------------------------------------------------------------------------------
       - name: Tests
         run: xtask test --ci
 
   linux-miri-tests:
-    runs-on: [
-      '@id:cubecl-linux-miri-tests-${{ matrix.rust }}-${{ github.run_id }}-${{ github.run_attempt }}',
-      '@image-family:ubuntu-2404-lts-amd64',
-      '@image-project:ubuntu-os-cloud',
-      '@disk-size:100',
-      '@keep-alive:false',
-      '@machine-type:n2-standard-16',
-      '@os:linux',
-      '@zones:northamerica-northeast1-b'
-      ]
+    # Same GCP-runner substitution as linux-std-tests above.
+    runs-on: ubuntu-24.04
     needs: [prepare-checks, code-quality]
     strategy:
       matrix:
@@ -165,7 +174,7 @@ jobs:
         uses: actions/checkout@v6
       # --------------------------------------------------------------------------------
       - name: Install Rust
-        uses: tracel-ai/github-actions/install-rust@v11
+        uses: tracel-ai/github-actions/install-rust@v10
         with:
           rust-toolchain: ${{ matrix.toolchain }}
           cache-key: ${{ matrix.rust }}-miri-tests
@@ -173,10 +182,10 @@ jobs:
           apt-packages: build-essential
       # --------------------------------------------------------------------------------
       - name: Install Mesa
-        uses: tracel-ai/github-actions/install-mesa@v11
+        uses: tracel-ai/github-actions/install-mesa@v10
       # --------------------------------------------------------------------------------
       - name: Install Vulkan SDK
-        uses: tracel-ai/github-actions/install-vulkan-sdk@v11
+        uses: tracel-ai/github-actions/install-vulkan-sdk@v10
       # --------------------------------------------------------------------------------
       - name: Tests
         run: xtask +n test --miri ub-only --ci

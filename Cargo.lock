@@ -694,23 +694,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "cubecl"
-version = "0.11.0-pre.3"
-dependencies = [
- "cubecl-core",
- "cubecl-cpu",
- "cubecl-cuda",
- "cubecl-environment",
- "cubecl-hip",
- "cubecl-ir",
- "cubecl-metal",
- "cubecl-runtime",
- "cubecl-std",
- "cubecl-wgpu",
- "half",
-]
-
-[[package]]
 name = "cubecl-common"
 version = "0.11.0-pre.3"
 dependencies = [
@@ -734,105 +717,6 @@ dependencies = [
  "test-log",
  "tynm",
  "xxhash-rust",
-]
-
-[[package]]
-name = "cubecl-core"
-version = "0.11.0-pre.3"
-dependencies = [
- "bitflags 2.13.1",
- "bytemuck",
- "cubecl-common",
- "cubecl-environment",
- "cubecl-ir",
- "cubecl-macros",
- "cubecl-runtime",
- "cubecl-zspace",
- "derive-new",
- "derive_more",
- "float-ord",
- "half",
- "hashbrown 0.17.1",
- "itertools 0.15.0",
- "log",
- "num-complex",
- "num-traits",
- "paste",
- "pliron",
- "serde",
- "serde_json",
- "tempfile",
- "test-log",
- "tracing",
- "trybuild",
- "variadics_please",
-]
-
-[[package]]
-name = "cubecl-cpp"
-version = "0.11.0-pre.3"
-dependencies = [
- "bytemuck",
- "cubecl-common",
- "cubecl-core",
- "cubecl-environment",
- "cubecl-opt",
- "cubecl-runtime",
- "derive-new",
- "derive_more",
- "half",
- "itertools 0.15.0",
- "log",
- "num-traits",
- "paste",
- "pliron",
- "sanitize-filename",
- "thiserror",
-]
-
-[[package]]
-name = "cubecl-cpu"
-version = "0.11.0-pre.3"
-dependencies = [
- "bytemuck",
- "crossbeam-utils",
- "cubecl-common",
- "cubecl-core",
- "cubecl-environment",
- "cubecl-llvm",
- "cubecl-runtime",
- "cubecl-std",
- "derive-new",
- "half",
- "libc",
- "log",
- "paste",
- "pliron",
- "spin",
- "sysinfo",
- "test-log",
- "winapi",
-]
-
-[[package]]
-name = "cubecl-cuda"
-version = "0.11.0-pre.3"
-dependencies = [
- "bytemuck",
- "cubecl-common",
- "cubecl-core",
- "cubecl-cpp",
- "cubecl-environment",
- "cubecl-runtime",
- "cubecl-std",
- "cudarc",
- "derive-new",
- "half",
- "log",
- "paste",
- "serde",
- "test-log",
- "tracing",
 ]
 
 [[package]]
@@ -875,28 +759,6 @@ dependencies = [
  "wasm-bindgen-futures",
  "web-sys",
  "web-time",
-]
-
-[[package]]
-name = "cubecl-hip"
-version = "0.11.0-pre.3"
-dependencies = [
- "bytemuck",
- "cubecl-common",
- "cubecl-core",
- "cubecl-cpp",
- "cubecl-environment",
- "cubecl-hip-sys",
- "cubecl-llvm",
- "cubecl-runtime",
- "cubecl-std",
- "derive-new",
- "half",
- "log",
- "paste",
- "serde",
- "test-log",
- "tracing",
 ]
 
 [[package]]
@@ -945,10 +807,7 @@ name = "cubecl-llvm"
 version = "0.11.0-pre.3"
 dependencies = [
  "cc",
- "cubecl-core",
  "cubecl-environment",
- "cubecl-opt",
- "cubecl-runtime",
  "derive-new",
  "half",
  "llvm-sys",
@@ -956,6 +815,9 @@ dependencies = [
  "pliron-llvm",
  "thiserror",
  "tracel-llvm-bundler",
+ "zenforks-cubecl-core",
+ "zenforks-cubecl-opt",
+ "zenforks-cubecl-runtime",
 ]
 
 [[package]]
@@ -993,12 +855,8 @@ dependencies = [
  "block2",
  "bytemuck",
  "cubecl-common",
- "cubecl-core",
- "cubecl-cpp",
  "cubecl-environment",
  "cubecl-ir",
- "cubecl-runtime",
- "cubecl-std",
  "derive-new",
  "half",
  "hashbrown 0.17.1",
@@ -1009,143 +867,10 @@ dependencies = [
  "paste",
  "serde",
  "test-log",
-]
-
-[[package]]
-name = "cubecl-opt"
-version = "0.11.0-pre.3"
-dependencies = [
- "cubecl-common",
- "cubecl-core",
- "cubecl-environment",
- "cubecl-ir",
- "derive-new",
- "derive_more",
- "downcast-rs",
- "env_logger",
- "expect-test",
- "foldhash 0.2.0",
- "hashbrown 0.17.1",
- "itertools 0.15.0",
- "log",
- "pliron",
- "pliron-llvm",
- "smallvec",
- "test-log",
- "thiserror",
-]
-
-[[package]]
-name = "cubecl-runtime"
-version = "0.11.0-pre.3"
-dependencies = [
- "buildid",
- "bytemuck",
- "cfg-if",
- "cfg_aliases",
- "cubecl-common",
- "cubecl-environment",
- "cubecl-ir",
- "cubecl-zspace",
- "derive-new",
- "derive_more",
- "foldhash 0.2.0",
- "futures-util",
- "hashbrown 0.17.1",
- "itertools 0.15.0",
- "log",
- "pliron",
- "rand 0.10.2",
- "serde",
- "serde_json",
- "serial_test",
- "smallvec",
- "tempfile",
- "test-log",
- "thiserror",
- "toml",
- "tracing",
- "tracy-client",
- "wasm-bindgen-futures",
-]
-
-[[package]]
-name = "cubecl-spirv"
-version = "0.11.0-pre.3"
-dependencies = [
- "bitflags 2.13.1",
- "cubecl-common",
- "cubecl-core",
- "cubecl-environment",
- "cubecl-ir",
- "cubecl-opt",
- "cubecl-runtime",
- "half",
- "hashbrown 0.17.1",
- "itertools 0.15.0",
- "paste",
- "pliron",
- "pliron-spirv",
- "sanitize-filename",
- "serde",
- "tracel-rspirv",
-]
-
-[[package]]
-name = "cubecl-std"
-version = "0.11.0-pre.3"
-dependencies = [
- "cubecl-common",
- "cubecl-core",
- "cubecl-environment",
- "cubecl-runtime",
- "half",
- "num-traits",
- "paste",
- "serde",
- "spin",
- "test-log",
- "variadics_please",
-]
-
-[[package]]
-name = "cubecl-wgpu"
-version = "0.11.0-pre.3"
-dependencies = [
- "ash",
- "bytemuck",
- "cfg-if",
- "cfg_aliases",
- "cubecl-common",
- "cubecl-core",
- "cubecl-cpp",
- "cubecl-environment",
- "cubecl-ir",
- "cubecl-opt",
- "cubecl-runtime",
- "cubecl-spirv",
- "cubecl-std",
- "derive-new",
- "derive_more",
- "half",
- "hashbrown 0.17.1",
- "itertools 0.15.0",
- "log",
- "objc2",
- "objc2-foundation",
- "objc2-metal",
- "paste",
- "pliron",
- "renderdoc",
- "sanitize-filename",
- "test-log",
- "thiserror",
- "tracel-ash",
- "tracing",
- "tracy-client",
- "wasm-bindgen-futures",
- "wgpu",
- "wgpu-hal",
+ "zenforks-cubecl-core",
+ "zenforks-cubecl-cpp",
+ "zenforks-cubecl-runtime",
+ "zenforks-cubecl-std",
 ]
 
 [[package]]
@@ -1275,10 +1000,10 @@ dependencies = [
 name = "device_sharing"
 version = "0.11.0-pre.3"
 dependencies = [
- "cubecl",
  "half",
  "sum_things",
  "wgpu",
+ "zenforks-cubecl",
 ]
 
 [[package]]
@@ -1624,8 +1349,8 @@ dependencies = [
 name = "fusing"
 version = "0.11.0-pre.3"
 dependencies = [
- "cubecl",
  "half",
+ "zenforks-cubecl",
 ]
 
 [[package]]
@@ -1717,8 +1442,8 @@ dependencies = [
 name = "gelu"
 version = "0.11.0-pre.3"
 dependencies = [
- "cubecl",
  "half",
+ "zenforks-cubecl",
 ]
 
 [[package]]
@@ -2610,8 +2335,8 @@ dependencies = [
 name = "normalization"
 version = "0.11.0-pre.3"
 dependencies = [
- "cubecl",
  "half",
+ "zenforks-cubecl",
 ]
 
 [[package]]
@@ -3831,8 +3556,8 @@ checksum = "13c2bddecc57b384dee18652358fb23172facb8a2c51ccc10d74c157bdea3292"
 name = "sum_things"
 version = "0.11.0-pre.3"
 dependencies = [
- "cubecl",
  "half",
+ "zenforks-cubecl",
 ]
 
 [[package]]
@@ -4007,8 +3732,8 @@ dependencies = [
 name = "throughput"
 version = "0.11.0-pre.3"
 dependencies = [
- "cubecl",
  "half",
+ "zenforks-cubecl",
 ]
 
 [[package]]
@@ -4414,7 +4139,6 @@ name = "tracing_example"
 version = "0.11.0-pre.3"
 dependencies = [
  "clap",
- "cubecl",
  "opentelemetry",
  "opentelemetry-otlp",
  "opentelemetry_sdk",
@@ -4422,6 +4146,7 @@ dependencies = [
  "tracing",
  "tracing-opentelemetry",
  "tracing-subscriber",
+ "zenforks-cubecl",
 ]
 
 [[package]]
@@ -5252,6 +4977,281 @@ dependencies = [
  "quote",
  "syn 2.0.119",
  "synstructure",
+]
+
+[[package]]
+name = "zenforks-cubecl"
+version = "0.11.0-pre.3"
+dependencies = [
+ "cubecl-environment",
+ "cubecl-ir",
+ "cubecl-metal",
+ "half",
+ "zenforks-cubecl-core",
+ "zenforks-cubecl-cpu",
+ "zenforks-cubecl-cuda",
+ "zenforks-cubecl-hip",
+ "zenforks-cubecl-runtime",
+ "zenforks-cubecl-std",
+ "zenforks-cubecl-wgpu",
+]
+
+[[package]]
+name = "zenforks-cubecl-core"
+version = "0.11.0-pre.3"
+dependencies = [
+ "bitflags 2.13.1",
+ "bytemuck",
+ "cubecl-common",
+ "cubecl-environment",
+ "cubecl-ir",
+ "cubecl-macros",
+ "cubecl-zspace",
+ "derive-new",
+ "derive_more",
+ "float-ord",
+ "half",
+ "hashbrown 0.17.1",
+ "itertools 0.15.0",
+ "log",
+ "num-complex",
+ "num-traits",
+ "paste",
+ "pliron",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "test-log",
+ "tracing",
+ "trybuild",
+ "variadics_please",
+ "zenforks-cubecl-runtime",
+]
+
+[[package]]
+name = "zenforks-cubecl-cpp"
+version = "0.11.0-pre.3"
+dependencies = [
+ "bytemuck",
+ "cubecl-common",
+ "cubecl-environment",
+ "derive-new",
+ "derive_more",
+ "half",
+ "itertools 0.15.0",
+ "log",
+ "num-traits",
+ "paste",
+ "pliron",
+ "sanitize-filename",
+ "thiserror",
+ "zenforks-cubecl-core",
+ "zenforks-cubecl-opt",
+ "zenforks-cubecl-runtime",
+]
+
+[[package]]
+name = "zenforks-cubecl-cpu"
+version = "0.11.0-pre.3"
+dependencies = [
+ "bytemuck",
+ "crossbeam-utils",
+ "cubecl-common",
+ "cubecl-environment",
+ "cubecl-llvm",
+ "derive-new",
+ "half",
+ "libc",
+ "log",
+ "paste",
+ "pliron",
+ "spin",
+ "sysinfo",
+ "test-log",
+ "winapi",
+ "zenforks-cubecl-core",
+ "zenforks-cubecl-runtime",
+ "zenforks-cubecl-std",
+]
+
+[[package]]
+name = "zenforks-cubecl-cuda"
+version = "0.11.0-pre.3"
+dependencies = [
+ "bytemuck",
+ "cubecl-common",
+ "cubecl-environment",
+ "cudarc",
+ "derive-new",
+ "half",
+ "log",
+ "paste",
+ "serde",
+ "test-log",
+ "tracing",
+ "zenforks-cubecl-core",
+ "zenforks-cubecl-cpp",
+ "zenforks-cubecl-runtime",
+ "zenforks-cubecl-std",
+]
+
+[[package]]
+name = "zenforks-cubecl-hip"
+version = "0.11.0-pre.3"
+dependencies = [
+ "bytemuck",
+ "cubecl-common",
+ "cubecl-environment",
+ "cubecl-hip-sys",
+ "cubecl-llvm",
+ "derive-new",
+ "half",
+ "log",
+ "paste",
+ "serde",
+ "test-log",
+ "tracing",
+ "zenforks-cubecl-core",
+ "zenforks-cubecl-cpp",
+ "zenforks-cubecl-runtime",
+ "zenforks-cubecl-std",
+]
+
+[[package]]
+name = "zenforks-cubecl-opt"
+version = "0.11.0-pre.3"
+dependencies = [
+ "cubecl-common",
+ "cubecl-environment",
+ "cubecl-ir",
+ "derive-new",
+ "derive_more",
+ "downcast-rs",
+ "env_logger",
+ "expect-test",
+ "foldhash 0.2.0",
+ "hashbrown 0.17.1",
+ "itertools 0.15.0",
+ "log",
+ "pliron",
+ "pliron-llvm",
+ "smallvec",
+ "test-log",
+ "thiserror",
+ "zenforks-cubecl-core",
+]
+
+[[package]]
+name = "zenforks-cubecl-runtime"
+version = "0.11.0-pre.3"
+dependencies = [
+ "buildid",
+ "bytemuck",
+ "cfg-if",
+ "cfg_aliases",
+ "cubecl-common",
+ "cubecl-environment",
+ "cubecl-ir",
+ "cubecl-zspace",
+ "derive-new",
+ "derive_more",
+ "foldhash 0.2.0",
+ "futures-util",
+ "hashbrown 0.17.1",
+ "itertools 0.15.0",
+ "log",
+ "pliron",
+ "rand 0.10.2",
+ "serde",
+ "serde_json",
+ "serial_test",
+ "smallvec",
+ "tempfile",
+ "test-log",
+ "thiserror",
+ "toml",
+ "tracing",
+ "tracy-client",
+ "wasm-bindgen-futures",
+]
+
+[[package]]
+name = "zenforks-cubecl-spirv"
+version = "0.11.0-pre.3"
+dependencies = [
+ "bitflags 2.13.1",
+ "cubecl-common",
+ "cubecl-environment",
+ "cubecl-ir",
+ "half",
+ "hashbrown 0.17.1",
+ "itertools 0.15.0",
+ "paste",
+ "pliron",
+ "pliron-spirv",
+ "sanitize-filename",
+ "serde",
+ "tracel-rspirv",
+ "zenforks-cubecl-core",
+ "zenforks-cubecl-opt",
+ "zenforks-cubecl-runtime",
+]
+
+[[package]]
+name = "zenforks-cubecl-std"
+version = "0.11.0-pre.3"
+dependencies = [
+ "cubecl-common",
+ "cubecl-environment",
+ "half",
+ "num-traits",
+ "paste",
+ "serde",
+ "spin",
+ "test-log",
+ "variadics_please",
+ "zenforks-cubecl-core",
+ "zenforks-cubecl-runtime",
+]
+
+[[package]]
+name = "zenforks-cubecl-wgpu"
+version = "0.11.0-pre.3"
+dependencies = [
+ "ash",
+ "bytemuck",
+ "cfg-if",
+ "cfg_aliases",
+ "cubecl-common",
+ "cubecl-environment",
+ "cubecl-ir",
+ "derive-new",
+ "derive_more",
+ "half",
+ "hashbrown 0.17.1",
+ "itertools 0.15.0",
+ "log",
+ "objc2",
+ "objc2-foundation",
+ "objc2-metal",
+ "paste",
+ "pliron",
+ "renderdoc",
+ "sanitize-filename",
+ "test-log",
+ "thiserror",
+ "tracel-ash",
+ "tracing",
+ "tracy-client",
+ "wasm-bindgen-futures",
+ "wgpu",
+ "wgpu-hal",
+ "zenforks-cubecl-core",
+ "zenforks-cubecl-cpp",
+ "zenforks-cubecl-opt",
+ "zenforks-cubecl-runtime",
+ "zenforks-cubecl-spirv",
+ "zenforks-cubecl-std",
 ]
 
 [[package]]

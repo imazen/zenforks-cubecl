@@ -188,11 +188,13 @@ fn register_types(props: &mut DeviceProperties) {
         ElemType::Bool,
     ];
 
+    // f32 is intentionally NOT in this list — it is registered separately
+    // below with restricted usage. The integer atomics here all natively
+    // support both Add and LoadStore on Metal 3.
     let atomic_types = [
         ElemType::Int(IntKind::I32),
         ElemType::UInt(UIntKind::U32),
         ElemType::UInt(UIntKind::U64),
-        ElemType::Float(FloatKind::F32),
     ];
 
     for ty in types {
@@ -203,6 +205,26 @@ fn register_types(props: &mut DeviceProperties) {
         props
             .register_atomic_type_usage(Type::atomic(ty), AtomicUsage::Add | AtomicUsage::LoadStore)
     }
+
+    // f32 atomics get LoadStore ONLY. `AtomicUsage::Add` is deliberately
+    // omitted even though Metal 3 hardware supports it, because naga's MSL
+    // backend does not emit `atomic_fetch_add_explicit` for f32: the WGSL
+    // codegen emits `atomicAdd<f32>(...)`, naga drops it silently in the MSL
+    // output, and every reduction then returns its default (~0.0) with NO
+    // runtime error.
+    //
+    // Declaring Add here would have callers happily emit
+    // `Atomic<f32>::fetch_add` and ship silently-wrong scores. Omitting it
+    // makes the capability check fail at construction with
+    // "unsupported atomic operation on this backend" — loud and actionable.
+    //
+    // Future fix: emit a u32-bitcast CAS loop in the WGSL codegen for
+    // Atomic<f32>::fetch_add so it is correct on every backend, then opt into
+    // native atomic_fetch_add_explicit once naga's MSL backend supports it.
+    props.register_atomic_type_usage(
+        Type::atomic(ElemType::Float(FloatKind::F32)),
+        AtomicUsage::LoadStore,
+    );
 }
 
 fn register_cmma(props: &mut DeviceProperties) {

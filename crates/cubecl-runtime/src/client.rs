@@ -526,6 +526,57 @@ impl Client {
         layouts
     }
 
+    /// Reserve host staging buffers of the given sizes, pinned (page-locked)
+    /// on backends that benefit.
+    ///
+    /// On CUDA, `cuMemcpyHtoDAsync` from pageable memory runs ~5-6 GB/s because
+    /// the driver stages through a hidden pinned bounce buffer; from pinned
+    /// memory it DMAs directly at 12-25 GB/s on `PCIe` 4.0. Pinned memory is a
+    /// limited system resource — reserve it for buffers you actually upload and
+    /// drop the handle after the transfer.
+    ///
+    /// Falls back to ordinary host allocations when the backend has no staging
+    /// support, so callers never need a backend check.
+    pub fn reserve_staging(&self, sizes: &[usize]) -> Vec<Bytes> {
+        if sizes.is_empty() {
+            return Vec::new();
+        }
+
+        let stream_id = self.stream_id();
+        let sizes_owned = sizes.to_vec();
+        let result = self
+            .device
+            .submit_blocking(move |server| server.staging(&sizes_owned, stream_id));
+
+        match result {
+            Ok(Ok(stagings)) => stagings,
+            // No staging support, or the server is gone: plain host buffers are
+            // always correct here, just slower to upload.
+            _ => sizes
+                .iter()
+                .map(|&size| Bytes::from_bytes_vec(vec![0u8; size]))
+                .collect(),
+        }
+    }
+
+    /// [`Self::create_from_slice`] via a pinned host staging buffer.
+    ///
+    /// Same result, but the host->device copy takes the DMA fast path. Prefer it
+    /// for uploads big enough for the copy to dominate; for small buffers the
+    /// staging reservation is not worth it.
+    pub fn create_from_slice_pinned(&self, slice: &[u8]) -> Handle {
+        let mut staging = self.reserve_staging(&[slice.len()]);
+        match staging.pop() {
+            Some(mut bytes) => {
+                bytes.copy_from_slice(slice);
+                self.create(bytes)
+            }
+            // reserve_staging always returns one buffer per size, but never
+            // panic on a upload path if that ever changes.
+            None => self.create_from_slice(slice),
+        }
+    }
+
     /// Returns a resource handle containing the given data.
     ///
     /// # Notes
