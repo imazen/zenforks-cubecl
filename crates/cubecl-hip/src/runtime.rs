@@ -128,6 +128,8 @@ impl DeviceService for HipServer {
         let mem_properties = MemoryDeviceProperties {
             max_page_size: max_memory as u64 / 4,
             alignment: mem_alignment as u64,
+            // `hipMemGetInfo`'s total, the same figure `max_page_size` is derived from.
+            total_memory: Some(max_memory as u64),
         };
 
         let supported_wmma_combinations = HipWmmaCompiler::supported_wmma_combinations(&arch);

@@ -12,7 +12,7 @@ use crate::{
 };
 use cubecl_core::{
     CubeDim, ExecutionMode, MemoryConfiguration, ir::MemoryDeviceProperties,
-    prelude::CompiledKernel,
+    prelude::CompiledKernel, server::IoError,
 };
 use cubecl_runtime::{
     compiler::{CompilationError, CubeTask},
@@ -78,6 +78,8 @@ impl KernelRunner {
         let memory_properties = MemoryDeviceProperties {
             max_page_size: max_shared_memory_size as u64,
             alignment: ALIGNMENT,
+            // Total system RAM, honoring a cgroup limit when one applies.
+            total_memory: Some(max_shared_memory_size as u64),
         };
 
         let memory_management_shared_memory = MemoryManagement::from_configuration(
@@ -149,7 +151,7 @@ impl KernelRunner {
         kind: ExecutionMode,
         cube_dim: CubeDim,
         cube_count: [u32; 3],
-    ) {
+    ) -> Result<(), IoError> {
         let (send, receive) = mpsc::channel();
         let mut msg_count = 0;
         let cube_dim_size = cube_dim.num_elems();
@@ -164,11 +166,13 @@ impl KernelRunner {
                 .extend((0..cube_dim_size - self.workers.len() as u32).map(|_| Worker::default()));
         }
 
+        // Reserving the kernel's shared memory can fail. It used to `.unwrap()`, which
+        // panicked on the execution queue's own thread where no caller could see it.
         let mut mlir_data = MlirData::new(
             resources,
             &mlir_engine.0.shared_memories,
             &mut self.memory_management_shared_memory,
-        );
+        )?;
         mlir_data.builtin.set_cube_dim(cube_dim);
         mlir_data.builtin.set_cube_count(cube_count);
 
@@ -200,5 +204,7 @@ impl KernelRunner {
                 break;
             }
         }
+
+        Ok(())
     }
 }

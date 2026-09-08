@@ -14,7 +14,37 @@ for vanilla cubecl history.
 
 ### [Unreleased]
 
+#### Added
+
+- **Devices report their capacity, so callers can size work before allocating.**
+  `MemoryDeviceProperties` gained `total_memory: Option<u64>`, alongside a
+  `can_allocate(bytes) -> AllocationVerdict` helper. The number was already being
+  queried and discarded: CUDA and HIP ask the driver (`cuDeviceTotalMem_v2`,
+  `hipMemGetInfo`) only to derive `max_page_size = total / 4`. Now a caller can ask
+  whether a 10 GiB working set is plausible on a 2 GiB device and pick a CPU or
+  streaming path instead of finding out by failing. `Option` because wgpu's
+  cross-backend surface exposes binding limits rather than device capacity —
+  reporting one as the other would be a fabricated number, so that path says
+  unknown. `AllocationVerdict::fits()` is false for `Unknown`, so a caller gating
+  on it errs toward the safe path. CUDA/HIP report the driver's total, CPU reports
+  system RAM honoring cgroup limits, wgpu reports unknown.
+
 #### Fixed
+
+- **Allocation failure panicked on server threads across every backend.** PR #6
+  fixed one CUDA path; this covers the rest — `initialize_memory` on hip/wgpu/cpu,
+  the discarded `bind` result on all four, CUDA's NCCL `recv` (which returns
+  `Result` and simply was not using it), wgpu's staging reservation during
+  readback, and the cpu backend's MLIR shared memory. Making `bind` return
+  `Result` is what surfaced most of them: `#[must_use]` turned each silently
+  dropped failure into a compile error. Allocation stays fire-and-forget, so the
+  happy path is unchanged; failures are recorded and surface at the next operation
+  that returns a `Result`. The cpu backend's execution queue is a process-wide
+  singleton with no stream to report to, so its failures are held and collected at
+  the next flush — meaning a collected error may surface on a different stream than
+  the one that caused it, which is documented at the type and still strictly better
+  than a panic no caller could see. Verified by negative control: reverting the cpu
+  fix reproduces `thread 'DSD-0-0' panicked`, a device-service-thread panic.
 
 - **A failed device allocation was unsurvivable, and invisible.** Three layers
   each assumed a memory reservation never fails, so a device OOM panicked on a

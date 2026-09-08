@@ -3,6 +3,7 @@ use crate::{
     compiler::{builtin::BuiltinArray, memref::LineMemRef, passes::shared_memories::SharedMemory},
     compute::schedule::BindingsResource,
 };
+use cubecl_core::server::IoError;
 use cubecl_runtime::{memory_management::MemoryManagement, storage::BytesStorage};
 use std::sync::Arc;
 
@@ -38,7 +39,7 @@ impl MlirData {
         bindings: BindingsResource,
         shared_memories: &SharedMemories,
         memory_management_shared_memory: &mut MemoryManagement<BytesStorage>,
-    ) -> Self {
+    ) -> Result<Self, IoError> {
         let BindingsResource { resources, info } = bindings;
 
         let builtin = BuiltinArray::default();
@@ -79,11 +80,11 @@ impl MlirData {
             let handle = match shared_memory {
                 SharedMemory::Array { ty, length, .. } => {
                     let length = (ty.size() * *length) as u64;
-                    memory_management_shared_memory.reserve(length).unwrap()
+                    memory_management_shared_memory.reserve(length)?
                 }
                 SharedMemory::Value { ty, .. } => {
                     let length = ty.size() as u64;
-                    memory_management_shared_memory.reserve(length).unwrap()
+                    memory_management_shared_memory.reserve(length)?
                 }
             };
 
@@ -105,11 +106,11 @@ impl MlirData {
 
         let shared_mlir_data = Arc::new(shared_mlir_data);
 
-        Self {
+        Ok(Self {
             shared_mlir_data,
             args_second_indirection,
             builtin,
-        }
+        })
     }
 
     pub fn push_builtin(&mut self) {

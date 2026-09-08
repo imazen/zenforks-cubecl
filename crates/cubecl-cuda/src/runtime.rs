@@ -102,6 +102,8 @@ impl DeviceService for CudaServer {
         let mem_properties = MemoryDeviceProperties {
             max_page_size: max_memory / 4,
             alignment: mem_alignment as u64,
+            // `cuDeviceTotalMem_v2`, the same figure `max_page_size` is derived from.
+            total_memory: Some(max_memory),
         };
 
         let mut comp_opts = CompilationOptions {
