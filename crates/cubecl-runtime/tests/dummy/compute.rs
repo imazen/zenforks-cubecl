@@ -51,6 +51,7 @@ fn init_server() -> DummyServer {
     let mem_properties = MemoryDeviceProperties {
         max_page_size: 1024 * 1024 * 512,
         alignment: 32,
+        total_memory: None,
     };
 
     let memory_management = MemoryManagement::from_configuration(

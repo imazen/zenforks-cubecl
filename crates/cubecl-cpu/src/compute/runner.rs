@@ -78,6 +78,8 @@ impl KernelRunner {
         let memory_properties = MemoryDeviceProperties {
             max_page_size: max_shared_memory_size as u64,
             alignment: ALIGNMENT,
+            // Total system RAM, honoring a cgroup limit when one applies.
+            total_memory: Some(max_shared_memory_size as u64),
         };
 
         let memory_management_shared_memory = MemoryManagement::from_configuration(
