@@ -64,6 +64,11 @@ impl DeviceService for MetalServer {
         let mem_props = MemoryDeviceProperties {
             max_page_size: (*metal_device).maxBufferLength() as u64,
             alignment: 256,
+            // `maxBufferLength` above is a per-buffer ceiling, not the device's
+            // capacity, so it must not be reported as one. `MTLDevice`'s
+            // `recommendedMaxWorkingSetSize` is the figure this wants; until it is
+            // wired up and checked on real hardware, unknown is the honest answer.
+            total_memory: None,
         };
 
         let hardware_props = HardwareProperties {

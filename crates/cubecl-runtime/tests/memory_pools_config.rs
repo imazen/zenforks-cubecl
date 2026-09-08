@@ -37,6 +37,7 @@ fn props() -> MemoryDeviceProperties {
     MemoryDeviceProperties {
         max_page_size: 128 * MIB,
         alignment: 32,
+        total_memory: None,
     }
 }
 

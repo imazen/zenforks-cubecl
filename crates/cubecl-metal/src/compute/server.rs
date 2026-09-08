@@ -197,14 +197,24 @@ impl Server for MetalServer {
         let mut resolved = self.streams.resolve(stream_id, std::iter::empty());
         let cursor = resolved.cursor;
         let (stream, failures) = resolved.current_and_failures();
-        let reserved = stream
+        // Reported rather than fatal, as on every other backend: the handle is
+        // left uninitialized, which every later use already refuses, and the
+        // reason is recorded so that refusal can name it.
+        let reserved = match stream.memory_management.reserve(size, failures) {
+            Ok(reserved) => reserved,
+            Err(err) => {
+                log::error!("device allocation of {size} B failed: {err}");
+                stream.memory_management.record_init_failure(&memory, err);
+                return;
+            }
+        };
+        if let Err(err) = stream
             .memory_management
-            .reserve(size, failures)
-            .expect("Failed to reserve memory");
-        stream
-            .memory_management
-            .bind(reserved, memory, cursor, failures)
-            .expect("Failed to bind memory");
+            .bind(reserved, memory.clone(), cursor, failures)
+        {
+            log::error!("binding {size} B of device memory failed: {err}");
+            stream.memory_management.record_init_failure(&memory, err);
+        }
     }
 
     fn read(

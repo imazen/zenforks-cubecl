@@ -101,6 +101,13 @@ impl WgpuMemManager {
         }
     }
 
+    /// Remember that `handle` was left without storage because `err`, so a
+    /// later use of it can say why instead of reporting a bare
+    /// "never initialized". See `MemoryManagement::record_init_failure`.
+    pub(crate) fn record_init_failure(&mut self, handle: &ManagedMemoryHandle, err: IoError) {
+        self.memory_pool.record_init_failure(handle, err);
+    }
+
     pub(crate) fn bind(
         &mut self,
         old: ManagedMemoryHandle,

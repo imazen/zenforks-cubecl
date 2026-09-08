@@ -342,9 +342,17 @@ impl<C: WgpuCompiler> Server for WgpuServer<C> {
 
     fn initialize_memory(&mut self, memory: ManagedMemoryHandle, size: u64, stream_id: StreamId) {
         let (stream, failures) = self.scheduler.stream_and_failures(&stream_id);
-        let reserved = stream
-            .empty(size, failures)
-            .unwrap_or_else(|err| panic!("failed to reserve {size} bytes of device memory: {err}"));
+        // Reported rather than fatal: the handle is left uninitialized, which
+        // every later use already refuses, and the reason is recorded so that
+        // refusal can name it. See `Command::initialize` for the full argument.
+        let reserved = match stream.empty(size, failures) {
+            Ok(reserved) => reserved,
+            Err(err) => {
+                log::error!("device allocation of {size} B failed: {err}");
+                stream.mem_manage.record_init_failure(&memory, err);
+                return;
+            }
+        };
         stream.mem_manage.bind(reserved, memory, failures);
     }
 

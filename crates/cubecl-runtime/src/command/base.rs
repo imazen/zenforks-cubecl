@@ -175,6 +175,40 @@ impl<'a, D: Driver> Command<'a, D> {
         }
     }
 
+    /// Give `memory` `size` bytes of device storage, or record why it could not
+    /// have them.
+    ///
+    /// This is what a backend's `initialize_memory` is: a function returning
+    /// `()`, with no way to report. The failure is real and must not be lost, so
+    /// it goes where a caller will actually meet it — the handle is left
+    /// uninitialized, which every later use already refuses, and the reason is
+    /// recorded so that refusal can name it. `reserve` above has already
+    /// reclaimed and retried by this point, so reaching the error arm means the
+    /// device genuinely could not serve the allocation.
+    ///
+    /// Panicking instead would take down a process over one allocation the
+    /// caller may well have been able to handle — and it would panic on a
+    /// server thread, where no caller's `Result` could see it.
+    pub fn initialize(&mut self, memory: ManagedMemoryHandle, size: u64) {
+        let reserved = match self.reserve(size) {
+            Ok(reserved) => reserved,
+            Err(err) => return self.record_init_failure(&memory, size, err),
+        };
+        if let Err(err) = self.bind(reserved, memory.clone()) {
+            self.record_init_failure(&memory, size, err);
+        }
+    }
+
+    /// Leave `memory` uninitialized and remember `err` as the reason.
+    fn record_init_failure(&mut self, memory: &ManagedMemoryHandle, size: u64, err: IoError) {
+        // Logged as well as recorded: the record is only read if someone later
+        // uses this handle, and a handle that is simply dropped would otherwise
+        // take the reason with it.
+        log::error!("device allocation of {size} B failed and will not be retried: {err}");
+        let (stream, _) = self.streams.current_and_failures();
+        stream.device_memory().record_init_failure(memory, err);
+    }
+
     /// The current stream's cursor.
     pub fn cursor(&self) -> u64 {
         self.streams.cursor

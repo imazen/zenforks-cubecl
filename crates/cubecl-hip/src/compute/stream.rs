@@ -137,6 +137,9 @@ impl EventStreamBackend for HipStreamBackend {
             &MemoryDeviceProperties {
                 max_page_size: self.mem_props.max_page_size,
                 alignment: PINNED_MEMORY_ALIGNMENT as u64,
+                // This pool is pinned HOST memory, so the device's capacity is not its
+                // capacity -- see the matching note in the CUDA backend.
+                total_memory: None,
             },
             self.mem_config.clone(),
             self.logger.clone(),

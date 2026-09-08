@@ -230,13 +230,17 @@ impl Server for CpuServer {
 
     fn initialize_memory(&mut self, memory: ManagedMemoryHandle, size: u64, stream_id: StreamId) {
         let (stream, failures) = self.scheduler.stream_and_failures(&stream_id);
-        // Fatal rather than reported, as on every other backend:
-        // `initialize_memory` has no error channel, and an allocation that
-        // never got its storage cannot be handed back as a taint either —
-        // nothing has a binding to it yet.
-        let reserved = stream
-            .empty(size, failures)
-            .unwrap_or_else(|err| panic!("failed to reserve {size} bytes of host memory: {err}"));
+        // Reported rather than fatal, as on every other backend: the handle is
+        // left uninitialized, which every later use already refuses, and the
+        // reason is recorded so that refusal can name it.
+        let reserved = match stream.empty(size, failures) {
+            Ok(reserved) => reserved,
+            Err(err) => {
+                log::error!("host allocation of {size} B failed: {err}");
+                stream.memory_management.record_init_failure(&memory, err);
+                return;
+            }
+        };
         stream.bind(reserved, memory, failures);
     }
 

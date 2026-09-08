@@ -305,6 +305,12 @@ pub(crate) fn create_server<C: WgpuCompiler>(
     let mem_props = MemoryDeviceProperties {
         max_page_size: limits.max_storage_buffer_binding_size,
         alignment: limits.min_uniform_buffer_offset_alignment as u64,
+        // wgpu's cross-backend surface exposes binding limits, not device capacity:
+        // `max_storage_buffer_binding_size` above is a per-binding ceiling and on many
+        // adapters is a fixed value unrelated to how much memory the device actually
+        // has. Reporting it as the capacity would be a fabricated number, so this stays
+        // unknown unless a backend fills it in.
+        total_memory: None,
     };
     let max_count = adapter_limits.max_compute_workgroups_per_dimension;
     let hardware_props = HardwareProperties {

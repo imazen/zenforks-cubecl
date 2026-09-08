@@ -75,16 +75,8 @@ impl Server for HipServer {
     }
 
     fn initialize_memory(&mut self, memory: ManagedMemoryHandle, size: u64, stream_id: StreamId) {
-        // Fatal rather than reported: `initialize_memory` has no error channel,
-        // and an allocation that never got its storage cannot be handed back
-        // as a taint either — nothing has a binding to it yet.
         let mut command = self.command_no_inputs(stream_id);
-        let reserved = command
-            .reserve(size)
-            .unwrap_or_else(|err| panic!("failed to reserve {size} bytes of device memory: {err}"));
-        command
-            .bind(reserved, memory)
-            .unwrap_or_else(|err| panic!("failed to bind {size} bytes of device memory: {err}"));
+        command.initialize(memory, size);
     }
 
     fn read(

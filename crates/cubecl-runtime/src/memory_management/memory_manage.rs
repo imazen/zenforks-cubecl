@@ -25,7 +25,7 @@ use alloc::vec;
 use alloc::vec::Vec;
 use core::ops::Range;
 use cubecl_environment::backtrace::BackTrace;
-use cubecl_environment::collections::HashSet;
+use cubecl_environment::collections::{HashMap, HashSet};
 use cubecl_environment::sync::Arc;
 use cubecl_ir::MemoryDeviceProperties;
 
@@ -170,9 +170,32 @@ pub enum MemoryAllocationMode {
     Persistent,
 }
 
+/// How many failed initializations are remembered at once.
+///
+/// A failure here is already exceptional, and the entries exist to explain one
+/// — not to be a log. The cap keeps a pathological run (a device that refuses
+/// every allocation) from growing this without bound, and the FIRST failures
+/// are the ones kept: in a cascade the earliest is the root cause and the rest
+/// are its consequences.
+const MAX_REMEMBERED_INIT_FAILURES: usize = 64;
+
 /// Reserves and keeps track of chunks of memory in the storage, and slices upon these chunks.
 pub struct MemoryManagement<Storage> {
     name: String,
+    /// Allocations whose initialization failed, by the id of the handle that
+    /// was left without storage.
+    ///
+    /// `initialize_memory` cannot return an error — it returns `()` — and the
+    /// handle it failed to fill has no binding, so it cannot be tainted either.
+    /// What it CAN do is leave the handle uninitialized, which every later use
+    /// already refuses through `find_mut`. This map is what makes that refusal
+    /// name the real reason ("out of device memory allocating N bytes") instead
+    /// of the generic "never initialized" — the difference between a caller
+    /// that can classify an OOM and retry elsewhere, and one that sees an
+    /// inscrutable failure.
+    ///
+    /// Empty on any healthy device, so the happy path never touches it.
+    failed_inits: HashMap<ManagedMemoryId, IoError>,
     persistent: PersistentPool,
     pools: Vec<DynamicPool>,
     /// Dynamic pools that have already reported hitting their cap, so the
@@ -770,6 +793,7 @@ impl<Storage: ComputeStorage> MemoryManagement<Storage> {
             ),
             pools,
             capacity_warned: HashSet::new(),
+            failed_inits: HashMap::default(),
             storage,
             alloc_reserve_count: 0,
             mode,
@@ -988,6 +1012,15 @@ impl<Storage: ComputeStorage> MemoryManagement<Storage> {
         let id = binding.descriptor();
 
         if id.location().init == 0 {
+            // An uninitialized location has two very different causes, and a
+            // caller needs them apart: a handle that was never filled at all,
+            // versus one whose allocation was attempted and failed. Only the
+            // second is recorded, and reporting it verbatim is what lets a
+            // caller classify a device OOM here rather than seeing a generic
+            // "never initialized" it cannot act on.
+            if let Some(err) = self.failed_inits.get(&id.id) {
+                return Err(err.clone());
+            }
             return Err(IoError::NotFound {
                 backtrace: BackTrace::capture(),
                 reason: "Memory location was never initialized".into(),
@@ -1027,6 +1060,15 @@ impl<Storage: ComputeStorage> MemoryManagement<Storage> {
         let id = binding.descriptor();
 
         if id.location().init == 0 {
+            // An uninitialized location has two very different causes, and a
+            // caller needs them apart: a handle that was never filled at all,
+            // versus one whose allocation was attempted and failed. Only the
+            // second is recorded, and reporting it verbatim is what lets a
+            // caller classify a device OOM here rather than seeing a generic
+            // "never initialized" it cannot act on.
+            if let Some(err) = self.failed_inits.get(&id.id) {
+                return Err(err.clone());
+            }
             return Err(IoError::NotFound {
                 backtrace: BackTrace::capture(),
                 reason: "Memory location was never initialized".into(),
@@ -1320,6 +1362,22 @@ impl<Storage: ComputeStorage> MemoryManagement<Storage> {
         log::info!("{}", self.memory_usage());
     }
 
+    /// Remember that `handle` was left without storage because `err`.
+    ///
+    /// Called from a backend's `initialize_memory`, which returns `()` and so
+    /// has nowhere to return this. The handle stays uninitialized, which is
+    /// what makes every later use of it fail rather than read undefined
+    /// memory; recording the cause here is what lets that failure say WHY.
+    ///
+    /// Bounded by [`MAX_REMEMBERED_INIT_FAILURES`] — see that constant for why
+    /// the earliest failures are the ones kept.
+    pub fn record_init_failure(&mut self, handle: &ManagedMemoryHandle, err: IoError) {
+        if self.failed_inits.len() >= MAX_REMEMBERED_INIT_FAILURES {
+            return;
+        }
+        self.failed_inits.insert(handle.descriptor().id, err);
+    }
+
     /// Binds the given [handle](HandleId) to a [`MemorySlot`].
     pub fn bind(
         &mut self,
@@ -1437,6 +1495,7 @@ mod tests {
     const DUMMY_MEM_PROPS: MemoryDeviceProperties = MemoryDeviceProperties {
         max_page_size: 128 * 1024 * 1024,
         alignment: 32,
+        total_memory: None,
     };
 
     fn options() -> MemoryManagementOptions {
@@ -1964,6 +2023,7 @@ mod tests {
             &MemoryDeviceProperties {
                 max_page_size: page_size,
                 alignment: 50,
+                total_memory: None,
             },
             MemoryConfiguration::Custom {
                 pool_options: vec![MemoryPoolOptions {
@@ -2006,6 +2066,7 @@ mod tests {
             &MemoryDeviceProperties {
                 max_page_size: 128 * 1024 * 1024,
                 alignment: 10,
+                total_memory: None,
             },
             MemoryConfiguration::Custom {
                 pool_options: pools,
@@ -2249,6 +2310,7 @@ mod tests {
             &MemoryDeviceProperties {
                 max_page_size: 128 * 1024 * 1024,
                 alignment: 32,
+                total_memory: None,
             },
             MemoryConfiguration::SubSlices,
             Arc::new(ServerLogger::default()),
@@ -2280,6 +2342,7 @@ mod tests {
             &MemoryDeviceProperties {
                 max_page_size: 128 * 1024 * 1024,
                 alignment: 32,
+                total_memory: None,
             },
             MemoryConfiguration::SubSlices,
             Arc::new(ServerLogger::default()),
@@ -2319,6 +2382,7 @@ mod tests {
             &(MemoryDeviceProperties {
                 max_page_size: 128 * 1024 * 1024,
                 alignment: 32,
+                total_memory: None,
             }),
             MemoryConfiguration::ExclusivePages,
             Arc::new(ServerLogger::default()),
@@ -2422,6 +2486,7 @@ mod tests {
             &MemoryDeviceProperties {
                 max_page_size: DUMMY_MEM_PROPS.max_page_size,
                 alignment: 50,
+                total_memory: None,
             },
             MemoryConfiguration::Custom {
                 pool_options: vec![MemoryPoolOptions {
@@ -2460,6 +2525,7 @@ mod tests {
             &MemoryDeviceProperties {
                 max_page_size: DUMMY_MEM_PROPS.max_page_size,
                 alignment: 10,
+                total_memory: None,
             },
             MemoryConfiguration::Custom {
                 pool_options: pools,
@@ -2828,6 +2894,7 @@ mod tests {
             &MemoryDeviceProperties {
                 max_page_size: 128 * 1024 * 1024,
                 alignment: 32,
+                total_memory: None,
             },
             MemoryConfiguration::ExclusivePages,
             Arc::new(ServerLogger::default()),

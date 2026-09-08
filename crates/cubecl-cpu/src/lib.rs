@@ -465,6 +465,57 @@ mod tests {
         let actual = u32::from_bytes(&bytes);
         assert_eq!(actual, &[7]);
     }
+
+    /// An allocation this backend cannot satisfy must be *reported*, not fatal,
+    /// and the report must name the real reason.
+    ///
+    /// Allocation is dispatched fire-and-forget so the happy path never pays for
+    /// a round trip, which means the failure cannot come back from `empty`
+    /// itself. It surfaces where the handle is used: the handle is left
+    /// uninitialized, and every read of it already refuses. What this pins is
+    /// that the refusal carries the ALLOCATION error rather than the generic
+    /// "never initialized" — a caller that cannot tell an OOM from an internal
+    /// bookkeeping fault cannot decide to retry on a bigger device.
+    ///
+    /// Safe to run: the request is refused by the pool's size predicate before
+    /// any memory is touched, so asking for more than the machine has does not
+    /// actually try to allocate it.
+    #[test]
+    fn an_impossible_allocation_is_reported_with_its_real_cause() {
+        let client = TestRuntime::client(&Default::default());
+        let props = client.properties().memory.clone();
+
+        // This backend knows its capacity, so a caller can size work against it.
+        let total = props
+            .total_memory
+            .expect("the cpu backend reports system RAM as its capacity");
+        assert!(total > 0, "a reported capacity must be a real number");
+
+        // Refused up front, from what the device reports, with nothing allocated.
+        let beyond = props.max_page_size.saturating_add(1);
+        assert!(
+            !props.can_allocate(beyond).fits(),
+            "a request past the per-allocation ceiling must not be reported as fitting"
+        );
+
+        // The allocation returns normally -- the point is that this does not panic.
+        let handle = client.empty(beyond as usize);
+
+        // ...and using it fails with the allocation's own error.
+        let err = client
+            .read_one(handle)
+            .expect_err("reading memory that was never allocated must fail");
+        let msg = err.to_string();
+        assert!(
+            !msg.contains("never initialized"),
+            "the failure must name the allocation error, not the generic \
+             uninitialized message; got: {msg}"
+        );
+        assert!(
+            msg.contains("allocate") || msg.contains("memory"),
+            "the failure should describe the allocation that failed; got: {msg}"
+        );
+    }
 }
 
 pub mod compute;
