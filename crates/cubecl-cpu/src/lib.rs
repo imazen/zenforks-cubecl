@@ -199,45 +199,6 @@ mod tests {
             "multi-cube SharedMemory/sync_cube isolation bug: got {actual:?}, expected {expected:?}"
         );
     }
-
-    /// An allocation this backend cannot satisfy must be *reported*, not fatal.
-    ///
-    /// Allocation is dispatched fire-and-forget so the happy path never pays for a
-    /// round trip, which means the failure cannot be returned from `empty` itself --
-    /// it is recorded and surfaces at the next checkpoint that returns a `Result`.
-    /// What must never happen is what used to: a panic raised on a server thread,
-    /// where no caller could catch it and the process died instead of the request.
-    ///
-    /// Safe to run: the request is refused by the pool's size predicate
-    /// (`IoError::BufferTooBig`) before any memory is touched, so asking for more
-    /// than the machine has does not actually try to allocate it.
-    #[test]
-    fn an_impossible_allocation_is_reported_and_does_not_panic() {
-        let client = TestRuntime::client(&Default::default());
-        let props = client.properties().memory.clone();
-
-        // This backend knows its capacity, so a caller can size work against it.
-        let total = props
-            .total_memory
-            .expect("the cpu backend reports system RAM as its capacity");
-        assert!(total > 0, "a reported capacity must be a real number");
-
-        // Refused up front, from what the device reports, with nothing allocated.
-        let beyond = props.max_page_size.saturating_add(1);
-        assert!(
-            !props.can_allocate(beyond).fits(),
-            "a request past the per-allocation ceiling must not be reported as fitting"
-        );
-
-        // The allocation returns normally -- the point is that this line does not panic.
-        let _handle = client.empty(beyond as usize);
-
-        // ...and the failure is not lost: it surfaces at the next checkpoint.
-        assert!(
-            client.flush().is_err(),
-            "a failed allocation must surface at the next checkpoint, not be dropped"
-        );
-    }
 }
 
 pub mod compiler;

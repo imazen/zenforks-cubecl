@@ -61,11 +61,7 @@ impl CpuStream {
     }
 
     pub fn flush(&mut self, mode: StreamErrorMode) -> Result<(), ServerError> {
-        // The execution queue runs on its own thread and has no stream to report to at
-        // the moment a task fails, so it holds failures until someone flushes. Fold them
-        // in here, before `flush_errors` decides what to surface -- otherwise a failed
-        // kernel launch would be silently dropped.
-        self.errors.extend(self.queue.flush());
+        self.queue.flush();
 
         self.flush_errors(mode)
     }
@@ -121,17 +117,8 @@ impl CpuStream {
     }
 
     /// Maps handles to their corresponding buffers.
-    /// Binds `reserved`'s storage to `new`.
-    ///
-    /// Returns the error rather than unwrapping it -- see the matching note in the
-    /// wgpu backend. A failed allocation leaves an uninitialized reservation, which
-    /// the memory management reports as `IoError::NotFound`.
-    pub fn bind(
-        &mut self,
-        reserved: ManagedMemoryHandle,
-        new: ManagedMemoryHandle,
-    ) -> Result<(), IoError> {
-        self.memory_management.bind(reserved, new, 0)
+    pub fn bind(&mut self, reserved: ManagedMemoryHandle, new: ManagedMemoryHandle) {
+        self.memory_management.bind(reserved, new, 0).unwrap();
     }
 
     pub fn read_async(

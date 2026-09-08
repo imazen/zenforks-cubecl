@@ -84,18 +84,8 @@ impl WgpuMemManager {
         }
     }
 
-    /// Binds `old`'s storage to `new`.
-    ///
-    /// Returns the error rather than unwrapping it: the pool reports
-    /// `IoError::NotFound` when the reservation it is handed was never initialized,
-    /// which is what a failed allocation leaves behind. Unwrapping turned that into
-    /// a panic on a device thread, unobservable by any caller.
-    pub(crate) fn bind(
-        &mut self,
-        old: ManagedMemoryHandle,
-        new: ManagedMemoryHandle,
-    ) -> Result<(), IoError> {
-        self.memory_pool.bind(old, new, 0)
+    pub(crate) fn bind(&mut self, old: ManagedMemoryHandle, new: ManagedMemoryHandle) {
+        self.memory_pool.bind(old, new, 0).unwrap();
     }
 
     pub(crate) fn reserve(&mut self, size: u64) -> Result<ManagedMemoryHandle, IoError> {

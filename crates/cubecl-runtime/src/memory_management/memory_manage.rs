@@ -626,7 +626,6 @@ mod tests {
     const DUMMY_MEM_PROPS: MemoryDeviceProperties = MemoryDeviceProperties {
         max_page_size: 128 * 1024 * 1024,
         alignment: 32,
-        total_memory: None,
     };
 
     fn options() -> MemoryManagementOptions {
@@ -787,7 +786,6 @@ mod tests {
             &MemoryDeviceProperties {
                 max_page_size: page_size,
                 alignment: 50,
-                total_memory: None,
             },
             MemoryConfiguration::Custom {
                 pool_options: vec![MemoryPoolOptions {
@@ -828,7 +826,6 @@ mod tests {
             &MemoryDeviceProperties {
                 max_page_size: 128 * 1024 * 1024,
                 alignment: 10,
-                total_memory: None,
             },
             MemoryConfiguration::Custom {
                 pool_options: pools,
@@ -855,7 +852,6 @@ mod tests {
             &MemoryDeviceProperties {
                 max_page_size: 128 * 1024 * 1024,
                 alignment: 32,
-                total_memory: None,
             },
             MemoryConfiguration::SubSlices,
             Arc::new(ServerLogger::default()),
@@ -887,7 +883,6 @@ mod tests {
             &MemoryDeviceProperties {
                 max_page_size: 128 * 1024 * 1024,
                 alignment: 32,
-                total_memory: None,
             },
             MemoryConfiguration::SubSlices,
             Arc::new(ServerLogger::default()),
@@ -921,7 +916,6 @@ mod tests {
             &(MemoryDeviceProperties {
                 max_page_size: 128 * 1024 * 1024,
                 alignment: 32,
-                total_memory: None,
             }),
             MemoryConfiguration::ExclusivePages,
             Arc::new(ServerLogger::default()),
@@ -1023,7 +1017,6 @@ mod tests {
             &MemoryDeviceProperties {
                 max_page_size: DUMMY_MEM_PROPS.max_page_size,
                 alignment: 50,
-                total_memory: None,
             },
             MemoryConfiguration::Custom {
                 pool_options: vec![MemoryPoolOptions {
@@ -1061,7 +1054,6 @@ mod tests {
             &MemoryDeviceProperties {
                 max_page_size: DUMMY_MEM_PROPS.max_page_size,
                 alignment: 10,
-                total_memory: None,
             },
             MemoryConfiguration::Custom {
                 pool_options: pools,
@@ -1084,7 +1076,6 @@ mod tests {
             &MemoryDeviceProperties {
                 max_page_size: 128 * 1024 * 1024,
                 alignment: 32,
-                total_memory: None,
             },
             MemoryConfiguration::ExclusivePages,
             Arc::new(ServerLogger::default()),

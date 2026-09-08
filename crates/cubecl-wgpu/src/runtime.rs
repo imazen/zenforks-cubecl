@@ -298,12 +298,6 @@ pub(crate) fn create_server(setup: WgpuSetup, options: RuntimeOptions) -> WgpuSe
         alignment: limits
             .min_uniform_buffer_offset_alignment
             .max(limits.min_storage_buffer_offset_alignment) as u64,
-        // wgpu's cross-backend surface exposes binding limits, not device capacity:
-        // `max_storage_buffer_binding_size` above is a per-binding ceiling and on many
-        // adapters is a fixed value unrelated to how much memory the device actually
-        // has. Reporting it as the capacity would be a fabricated number, so this stays
-        // unknown unless a backend fills it in (see the Vulkan path, which can ask).
-        total_memory: None,
     };
     let max_count = adapter_limits.max_compute_workgroups_per_dimension;
     let hardware_props = HardwareProperties {

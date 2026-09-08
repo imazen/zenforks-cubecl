@@ -165,14 +165,7 @@ impl WgpuStream {
             // memory is 32 bytes aligned (see WgpuStorage).
             let align = wgpu::COPY_BUFFER_ALIGNMENT;
             let aligned_len = resource.size.div_ceil(align) * align;
-            // A staging allocation can fail like any other. This fn reports through its
-            // future, so return the error there instead of unwrapping -- an unwrap here
-            // panics on a device thread, which reaches the caller only as an opaque
-            // `CallError` with nothing naming the readback that ran out of memory.
-            let (staging, binding) = match self.mem_manage.reserve_staging(aligned_len) {
-                Ok(pair) => pair,
-                Err(err) => return Box::pin(async move { Err(err.into()) }),
-            };
+            let (staging, binding) = self.mem_manage.reserve_staging(aligned_len).unwrap();
 
             self.tasks_count += 1;
             self.encoder.copy_buffer_to_buffer(

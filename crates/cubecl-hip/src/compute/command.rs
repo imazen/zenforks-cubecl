@@ -105,29 +105,19 @@ impl<'a> Command<'a> {
     pub fn empty(&mut self, size: u64) -> Result<Handle, IoError> {
         let handle = Handle::new(self.streams.current, size);
         let reserved = self.reserve(size)?;
-        self.bind(reserved, handle.memory.clone())?;
+        self.bind(reserved, handle.memory.clone());
 
         Ok(handle)
     }
 
     #[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(self)))]
-    /// Binds `reserved`'s storage to `new`.
-    ///
-    /// Returns the error rather than unwrapping it: the underlying `bind` reports
-    /// `IoError::NotFound` when the reservation it is handed was never initialized
-    /// (its location is still `init == 0`), which is exactly what a failed
-    /// allocation leaves behind. Unwrapping turned that into a panic on a server
-    /// thread, where no caller could see it.
-    pub fn bind(
-        &mut self,
-        reserved: ManagedMemoryHandle,
-        new: ManagedMemoryHandle,
-    ) -> Result<(), IoError> {
+    pub fn bind(&mut self, reserved: ManagedMemoryHandle, new: ManagedMemoryHandle) {
         let cursor = self.cursor();
         self.streams
             .current()
             .memory_management_gpu
             .bind(reserved, new, cursor)
+            .unwrap();
     }
 
     /// Creates a [Bytes] instance from pinned memory, if suitable for the given size.

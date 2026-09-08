@@ -67,9 +67,6 @@ impl EventStreamBackend for CudaStreamBackend {
             &MemoryDeviceProperties {
                 max_page_size: self.mem_props.max_page_size,
                 alignment: PINNED_MEMORY_ALIGNMENT as u64,
-                // This pool is pinned HOST memory, so the device's capacity is not its
-                // capacity. Host RAM is not queried here, so the honest answer is unknown.
-                total_memory: None,
             },
             self.mem_config.clone(),
             self.logger.clone(),

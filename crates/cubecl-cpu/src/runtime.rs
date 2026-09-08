@@ -68,8 +68,6 @@ impl DeviceService for CpuServer {
         let mem_properties = MemoryDeviceProperties {
             max_page_size: max_shared_memory_size as u64,
             alignment: ALIGNMENT,
-            // Total system RAM, honoring a cgroup limit when one applies.
-            total_memory: Some(max_shared_memory_size as u64),
         };
 
         let mut device_props = DeviceProperties::new(

@@ -195,19 +195,8 @@ impl ComputeServer for CpuServer {
 
     fn initialize_memory(&mut self, memory: ManagedMemoryHandle, size: u64, stream_id: StreamId) {
         let stream = self.scheduler.stream(&stream_id);
-        // Allocation failure here used to `.unwrap()`. This fn returns `()`, so the
-        // failure had nowhere to go but a panic on a server thread, unobservable by any
-        // caller. Report it through the same stream error channel `write` above uses.
-        let reserved = match stream.empty(size) {
-            Ok(reserved) => reserved,
-            Err(err) => {
-                stream.error(ServerError::Io(err));
-                return;
-            }
-        };
-        if let Err(err) = stream.bind(reserved, memory) {
-            stream.error(ServerError::Io(err));
-        }
+        let reserved = stream.empty(size).unwrap();
+        stream.bind(reserved, memory);
     }
 
     fn read(
