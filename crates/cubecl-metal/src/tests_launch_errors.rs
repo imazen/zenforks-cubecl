@@ -5,10 +5,7 @@
 //! uses more threadgroup memory than the device allows.
 
 use cubecl_core::{self as cubecl, prelude::*};
-use cubecl_core::{
-    Runtime,
-    server::{LaunchError, ResourceLimitError, ServerError},
-};
+use cubecl_core::server::{LaunchError, ResourceLimitError, ServerError};
 use cubecl_runtime::runtime::Runtime;
 
 type R = crate::MetalRuntime;
