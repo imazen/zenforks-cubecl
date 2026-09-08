@@ -81,8 +81,21 @@ impl ComputeServer for HipServer {
             Err(err) => unreachable!("{err:?}"),
         };
 
-        let reserved = command.reserve(size).unwrap();
-        command.bind(reserved, memory);
+        // Device-OOM here used to `.unwrap()`. This fn returns `()`, so the failure
+        // had nowhere to go but a panic -- on a server thread, where no caller could
+        // observe it. `reserve` already returns `Result<_, IoError>`, and the stream
+        // has an error channel for exactly this: record it and let the next operation
+        // surface it. Same shape as the CUDA backend.
+        let reserved = match command.reserve(size) {
+            Ok(reserved) => reserved,
+            Err(err) => {
+                command.error(err.into());
+                return;
+            }
+        };
+        if let Err(err) = command.bind(reserved, memory) {
+            command.error(err.into());
+        }
     }
 
     fn read(

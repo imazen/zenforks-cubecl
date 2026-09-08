@@ -267,8 +267,20 @@ impl ComputeServer for WgpuServer {
 
     fn initialize_memory(&mut self, memory: ManagedMemoryHandle, size: u64, stream_id: StreamId) {
         let stream = self.scheduler.stream(&stream_id);
-        let reserved = stream.empty(size).unwrap();
-        stream.mem_manage.bind(reserved, memory);
+        // Device-OOM here used to `.unwrap()`. This fn returns `()`, so the failure had
+        // nowhere to go but a panic -- and on wgpu that panic lands on a device-service
+        // thread, where no caller's `Result` can see it. Report it through the same
+        // stream error channel `write` above uses.
+        let reserved = match stream.empty(size) {
+            Ok(reserved) => reserved,
+            Err(err) => {
+                stream.error(ServerError::Io(err));
+                return;
+            }
+        };
+        if let Err(err) = stream.mem_manage.bind(reserved, memory) {
+            stream.error(ServerError::Io(err));
+        }
     }
 
     fn read(

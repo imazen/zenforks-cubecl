@@ -134,7 +134,9 @@ impl ComputeServer for CudaServer {
                 return;
             }
         };
-        command.bind(reserved, memory);
+        if let Err(err) = command.bind(reserved, memory) {
+            command.error(err.into());
+        }
     }
 
     fn write(&mut self, descriptors: Vec<(CopyDescriptor, Bytes)>, stream_id: StreamId) {
@@ -500,8 +502,12 @@ impl ServerCommunication for CudaServer {
             },
         )?;
 
-        let memory = command_dst.reserve(handle.size()).unwrap();
-        command_dst.bind(memory, handle.memory.clone());
+        // `recv` returns `Result`, so an allocation failure here has somewhere to go.
+        // It previously did not use it: `reserve` was unwrapped and `bind`'s result
+        // discarded, so a device-OOM on the receiving side panicked instead of being
+        // reported to the caller that asked for the transfer.
+        let memory = command_dst.reserve(handle.size())?;
+        command_dst.bind(memory, handle.memory.clone())?;
 
         let resource_dst = command_dst.resource(handle.binding())?;
 
